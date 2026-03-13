@@ -41,6 +41,18 @@ async function main() {
   const app = express()
   app.use(express.json())
 
+  // Token-based authentication middleware
+  app.use((req, res, next) => {
+    const secret = process.env.MCP_SECRET
+    const token = req.query.token
+
+    if (!token || token !== secret) {
+      return res.status(401).json({ error: 'Unauthorized' })
+    }
+
+    next()
+  })
+
   // Health check
   app.get('/health', (_req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() })

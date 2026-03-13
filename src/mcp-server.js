@@ -10,6 +10,7 @@ import * as sshExec from './tools/ssh_exec.js';
 import * as tailscaleStatus from './tools/tailscale_status.js';
 import * as uploadFile from './tools/upload_file.js';
 import * as sendTelegram from './tools/send_telegram.js';
+import * as fetchExternal from './tools/fetch_external.js';
 
 /**
  * Create and configure the MCP server with all tools registered.
@@ -70,6 +71,19 @@ export function createMCPServer(env) {
     sendTelegram.schema,
     async (args) => {
       const result = await sendTelegram.handler(args, env.TELEGRAM_BOT_TOKEN, env.DEFAULT_CHAT_ID);
+      return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+    },
+  );
+
+  // -------------------------------------------------------------------------
+  // fetch_external - needs PROXY_ALLOWED_DOMAINS + auth tokens
+  // -------------------------------------------------------------------------
+  server.tool(
+    fetchExternal.name,
+    fetchExternal.description,
+    fetchExternal.schema,
+    async (args) => {
+      const result = await fetchExternal.handler(args, env.PROXY_ALLOWED_DOMAINS, env);
       return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
     },
   );

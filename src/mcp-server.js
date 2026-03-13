@@ -1,6 +1,6 @@
 /**
  * MCP Server
- * Uses McpServer from the SDK for clean tool registration via server.registerTool()
+ * Uses McpServer from the SDK for clean tool registration via server.tool()
  */
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -25,7 +25,7 @@ export function createMCPServer(env) {
   // -------------------------------------------------------------------------
   // ssh_exec - no env vars needed
   // -------------------------------------------------------------------------
-  server.registerTool(
+  server.tool(
     sshExec.name,
     sshExec.description,
     sshExec.schema,
@@ -38,7 +38,7 @@ export function createMCPServer(env) {
   // -------------------------------------------------------------------------
   // tailscale_status - needs TAILSCALE_API_KEY
   // -------------------------------------------------------------------------
-  server.registerTool(
+  server.tool(
     tailscaleStatus.name,
     tailscaleStatus.description,
     tailscaleStatus.schema,
@@ -51,7 +51,7 @@ export function createMCPServer(env) {
   // -------------------------------------------------------------------------
   // upload_file - no env vars needed
   // -------------------------------------------------------------------------
-  server.registerTool(
+  server.tool(
     uploadFile.name,
     uploadFile.description,
     uploadFile.schema,
@@ -64,7 +64,7 @@ export function createMCPServer(env) {
   // -------------------------------------------------------------------------
   // send_telegram - needs TELEGRAM_BOT_TOKEN + DEFAULT_CHAT_ID
   // -------------------------------------------------------------------------
-  server.registerTool(
+  server.tool(
     sendTelegram.name,
     sendTelegram.description,
     sendTelegram.schema,

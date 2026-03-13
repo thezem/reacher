@@ -21,8 +21,8 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.0",
-    "dotenv": "^16.4.5",
+    "@modelcontextprotocol/sdk": "1.27.1",
+    "dotenv": "16.6.1",
     "express": "^4.19.2",
     "zod": "^3.23.8"
   },

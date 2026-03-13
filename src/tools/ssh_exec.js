@@ -61,7 +61,7 @@ export async function handler({ hostname, command, user, shell = 'cmd' }) {
 
   // -o StrictHostKeyChecking=no avoids interactive prompts for new Tailscale hosts
   // -o IdentitiesOnly=yes forces use of only the specified key
-  // -i /root/.ssh/id_ed25519 uses the ed25519 key explicitly
+  // -i /root/.ssh/reacher-key uses the dedicated reacher key mounted via EasyPanel
 
   // Build the remote command based on shell type
   let remoteCmd = command;
@@ -75,7 +75,7 @@ export async function handler({ hostname, command, user, shell = 'cmd' }) {
   const sshArgs = [
     '-o', 'StrictHostKeyChecking=no',
     '-o', 'IdentitiesOnly=yes',
-    '-i', '/root/.ssh/id_ed25519',
+    '-i', '/root/.ssh/reacher-key',
     `${user}@${hostname}`,
     remoteCmd,
   ];

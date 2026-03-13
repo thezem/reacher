@@ -4,6 +4,7 @@
  */
 
 import { z } from 'zod';
+import fs from 'fs';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 
@@ -29,8 +30,22 @@ export const schema = {
  * @param {{ hostname: string, command: string, user: string }} args
  */
 export async function handler({ hostname, command, user }) {
+  // Verify ssh binary exists in the container
+  if (!fs.existsSync('/usr/bin/ssh')) {
+    return {
+      success: false,
+      hostname,
+      user,
+      command,
+      stdout: '',
+      stderr: 'SSH binary not found at /usr/bin/ssh. Ensure openssh-client is installed in the container.',
+      exitCode: 127,
+      error: 'ssh: command not found',
+    };
+  }
+
   // -o StrictHostKeyChecking=no avoids interactive prompts for new Tailscale hosts
-  const sshCommand = `ssh -o StrictHostKeyChecking=no ${user}@${hostname} "${command.replace(/"/g, '\\"')}"`;
+  const sshCommand = `/usr/bin/ssh -o StrictHostKeyChecking=no ${user}@${hostname} "${command.replace(/"/g, '\\"')}"`;
 
   try {
     const { stdout, stderr } = await execAsync(sshCommand, {

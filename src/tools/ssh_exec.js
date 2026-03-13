@@ -5,10 +5,20 @@
 
 import { z } from 'zod';
 import fs from 'fs';
-import { exec } from 'child_process';
-import { promisify } from 'util';
+import { spawn } from 'child_process';
 
-const execAsync = promisify(exec);
+/**
+ * Encode a string as Base64-encoded UTF-16LE for PowerShell -EncodedCommand
+ * @param {string} str
+ * @returns {string}
+ */
+function toBase64Utf16Le(str) {
+  const buf = Buffer.alloc(str.length * 2);
+  for (let i = 0; i < str.length; i++) {
+    buf.writeUInt16LE(str.charCodeAt(i), i * 2);
+  }
+  return buf.toString('base64');
+}
 
 export const name = 'ssh_exec';
 
@@ -24,12 +34,17 @@ export const schema = {
     .optional()
     .default('hazem')
     .describe('SSH user to connect as (default: hazem)'),
+  shell: z
+    .enum(['cmd', 'powershell'])
+    .optional()
+    .default('cmd')
+    .describe('Shell to use on Windows (cmd or powershell; default: cmd)'),
 };
 
 /**
- * @param {{ hostname: string, command: string, user: string }} args
+ * @param {{ hostname: string, command: string, user: string, shell: string }} args
  */
-export async function handler({ hostname, command, user }) {
+export async function handler({ hostname, command, user, shell = 'cmd' }) {
   // Verify ssh binary exists in the container
   if (!fs.existsSync('/usr/bin/ssh')) {
     return {
@@ -47,34 +62,66 @@ export async function handler({ hostname, command, user }) {
   // -o StrictHostKeyChecking=no avoids interactive prompts for new Tailscale hosts
   // -o IdentitiesOnly=yes forces use of only the specified key
   // -i /root/.ssh/id_ed25519 uses the ed25519 key explicitly
-  const sshCommand = `/usr/bin/ssh -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i /root/.ssh/id_ed25519 ${user}@${hostname} "${command.replace(/"/g, '\\"')}"`;
 
-  try {
-    const { stdout, stderr } = await execAsync(sshCommand, {
+  // Build the remote command based on shell type
+  let remoteCmd = command;
+  if (shell === 'powershell') {
+    // Encode the command as Base64 UTF-16LE for PowerShell
+    const encoded = toBase64Utf16Le(command);
+    remoteCmd = `powershell -NoProfile -NonInteractive -EncodedCommand ${encoded}`;
+  }
+
+  // Build SSH args as array to avoid local shell expansion
+  const sshArgs = [
+    '-o', 'StrictHostKeyChecking=no',
+    '-o', 'IdentitiesOnly=yes',
+    '-i', '/root/.ssh/id_ed25519',
+    `${user}@${hostname}`,
+    remoteCmd,
+  ];
+
+  return new Promise((resolve) => {
+    let stdout = '';
+    let stderr = '';
+
+    const proc = spawn('/usr/bin/ssh', sshArgs, {
       timeout: 30_000,
       maxBuffer: 10 * 1024 * 1024, // 10 MB
     });
 
-    return {
-      success: true,
-      hostname,
-      user,
-      command,
-      stdout: stdout.trim(),
-      stderr: stderr.trim(),
-      exitCode: 0,
-    };
-  } catch (error) {
-    // exec rejects on non-zero exit code too — return structured output either way
-    return {
-      success: false,
-      hostname,
-      user,
-      command,
-      stdout: error.stdout?.trim() ?? '',
-      stderr: error.stderr?.trim() ?? '',
-      exitCode: error.code ?? 1,
-      error: error.message,
-    };
-  }
+    proc.stdout.on('data', (data) => {
+      stdout += data.toString();
+    });
+
+    proc.stderr.on('data', (data) => {
+      stderr += data.toString();
+    });
+
+    proc.on('close', (code) => {
+      resolve({
+        success: code === 0,
+        hostname,
+        user,
+        command,
+        shell,
+        stdout: stdout.trim(),
+        stderr: stderr.trim(),
+        exitCode: code ?? 1,
+      });
+    });
+
+    proc.on('error', (error) => {
+      resolve({
+        success: false,
+        hostname,
+        user,
+        command,
+        shell,
+        stdout: stdout.trim(),
+        stderr: stderr.trim(),
+        exitCode: 1,
+        error: error.message,
+      });
+    });
+  });
 }

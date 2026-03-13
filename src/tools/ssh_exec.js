@@ -59,6 +59,9 @@ export async function handler({ hostname, command, user, shell = 'cmd' }) {
     };
   }
 
+  // Set proper permissions on the SSH key (SSH requires 600 for private keys)
+  fs.chmodSync('/root/.ssh/reacher-key', 0o600);
+
   // -o StrictHostKeyChecking=no avoids interactive prompts for new Tailscale hosts
   // -o IdentitiesOnly=yes forces use of only the specified key
   // -i /root/.ssh/reacher-key uses the dedicated reacher key mounted via EasyPanel

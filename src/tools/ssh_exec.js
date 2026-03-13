@@ -45,7 +45,9 @@ export async function handler({ hostname, command, user }) {
   }
 
   // -o StrictHostKeyChecking=no avoids interactive prompts for new Tailscale hosts
-  const sshCommand = `/usr/bin/ssh -o StrictHostKeyChecking=no ${user}@${hostname} "${command.replace(/"/g, '\\"')}"`;
+  // -o IdentitiesOnly=yes forces use of only the specified key
+  // -i /root/.ssh/id_ed25519 uses the ed25519 key explicitly
+  const sshCommand = `/usr/bin/ssh -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i /root/.ssh/id_ed25519 ${user}@${hostname} "${command.replace(/"/g, '\\"')}"`;
 
   try {
     const { stdout, stderr } = await execAsync(sshCommand, {

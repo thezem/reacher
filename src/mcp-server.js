@@ -11,6 +11,7 @@ import * as tailscaleStatus from './tools/tailscale_status.js'
 import * as uploadFile from './tools/upload_file.js'
 // import * as sendTelegram from './tools/send_telegram.js'
 import * as fetchExternal from './tools/fetch_external.js'
+import * as gistKb from './tools/gist_kb.js'
 
 /**
  * Create and configure the MCP server with all tools registered.
@@ -66,6 +67,14 @@ export function createMCPServer(env) {
   // -------------------------------------------------------------------------
   server.tool(fetchExternal.name, fetchExternal.description, fetchExternal.schema, async args => {
     const result = await fetchExternal.handler(args, env.PROXY_ALLOWED_DOMAINS, env)
+    return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
+  })
+
+  // -------------------------------------------------------------------------
+  // gist_kb - needs GITHUB_TOKEN
+  // -------------------------------------------------------------------------
+  server.tool(gistKb.name, gistKb.description, gistKb.schema, async args => {
+    const result = await gistKb.handler(args, env)
     return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
   })
 

@@ -26,7 +26,7 @@ Reacher connects to Claude as a custom MCP connector. Once connected, Claude can
 
 ## Using with Claude
 
-Drop AGENTS.md into your Claude session (paste at the start of a new conversation) and Claude will figure out the rest - it'll discover your devices, probe SSH access, and save a device map to your gist so future sessions pick up where you left off. No setup instructions needed. Just connect the MCP server and paste the file.
+Drop [AGENT.MD](AGENT.MD) into your Claude session (paste at the start of a new conversation) and Claude will figure out the rest - it'll discover your devices, probe SSH access, and save a device map to your gist so future sessions pick up where you left off. No setup instructions needed. Just connect the MCP server and paste the file.
 
 ## Setup
 

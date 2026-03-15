@@ -24,6 +24,10 @@ Reacher connects to Claude as a custom MCP connector. Once connected, Claude can
 - A VPS or always-on machine to host the server (it needs to be reachable from Claude.ai)
 - A Tailscale API key and a GitHub personal access token
 
+## Using with Claude
+
+Drop AGENTS.md into your Claude session (paste at the start of a new conversation) and Claude will figure out the rest - it'll discover your devices, probe SSH access, and save a device map to your gist so future sessions pick up where you left off. No setup instructions needed. Just connect the MCP server and paste the file.
+
 ## Setup
 
 Copy `.env.example` to `.env` and fill in your credentials, then choose your runtime:

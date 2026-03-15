@@ -1,98 +1,167 @@
-# Quick Start Guide
+# Quickstart
 
-## 🚀 Get Running in 5 Minutes
+## 1. Clone and configure
 
-### 1. Create `.env`
 ```bash
+git clone https://github.com/your-username/reacher.git
+cd reacher
 cp .env.example .env
 ```
 
-### 2. Get Your Credentials
+Open `.env` and fill in your credentials. See below for where to get each one.
 
-**Tailscale API Key:**
-- Visit https://login.tailscale.com/admin/settings/keys
-- Create new key with "Devices (read-only)" scope
-- Paste into `.env` as `TAILSCALE_API_KEY`
+---
 
-**Telegram Bot Token & Chat ID:**
-- Chat @BotFather on Telegram → `/newbot` → follow prompts
-- Copy token to `.env` as `TELEGRAM_BOT_TOKEN`
-- Send any message to your bot
-- Visit: `https://api.telegram.org/bot<TOKEN>/getUpdates`
-- Find your `chat_id` in the response → paste into `.env` as `DEFAULT_CHAT_ID`
+## 2. Get your credentials
 
-### 3. Run Locally (with Docker Compose)
+**Tailscale API key**
+
+1. Go to https://login.tailscale.com/admin/settings/keys
+2. Click **Generate auth key** (or **API keys** depending on your plan)
+3. Give it "Devices (read-only)" scope
+4. Paste the key into `.env` as `TAILSCALE_API_KEY`
+
+**GitHub personal access token**
+
+1. Go to https://github.com/settings/tokens
+2. Create a new token (classic or fine-grained)
+3. Grant it the `gist` scope (read + write) plus any other API scopes you need for `fetch_external`
+4. Paste it into `.env` as `GITHUB_TOKEN`
+
+**MCP secret**
+
+Just pick a random string and set it as `MCP_SECRET`. This is the token Claude.ai uses to authenticate with your server. Something like `openssl rand -hex 32` works fine.
+
+---
+
+## 3. Configure Tailscale SSH
+
+For `ssh_exec` to work, the devices you want to reach need to have Tailscale SSH enabled.
+
+On each target machine:
 ```bash
-docker-compose up
-# Server runs on http://localhost:3000
+# Enable Tailscale SSH
+sudo tailscale up --ssh
 ```
 
-Or with Node.js:
+Then verify you can SSH in manually from your server:
+```bash
+ssh user@device-hostname
+```
+
+If that works, Reacher will work. The `tailscale_status` tool will show you all your device hostnames.
+
+---
+
+## 4. Run the server
+
+**Docker (recommended)**
+```bash
+docker build -t reacher .
+docker run -d \
+  -p 3000:3000 \
+  --env-file .env \
+  --restart unless-stopped \
+  --name reacher \
+  reacher
+```
+
+Check it started:
+```bash
+docker logs reacher
+```
+
+**Docker Compose (handy for local dev)**
+```bash
+docker-compose up
+```
+
+**Bare Node**
 ```bash
 npm install
+node index.js
+# or for auto-reload during development:
 npm run dev
 ```
 
-### 4. Test a Tool
+Server runs on `http://localhost:3000` by default (or whatever `PORT` you set).
+
+---
+
+## 5. Verify it's working
+
 ```bash
-curl -X POST http://localhost:3000 \
+curl -X POST http://localhost:3000/mcp?token=YOUR_MCP_SECRET \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc": "2.0", "method": "tools/list", "id": 1}'
 ```
 
-### 5. Add to Claude.ai
-- Go to Settings → Connected apps
-- Add custom connector: `http://localhost:3000` (or your VPS URL)
-- Start using your tools in Claude!
+You should get back a JSON response listing the four tools.
 
-## 📦 Deploy to VPS with EasyPanel
+---
 
-1. Push to GitHub
-2. Connect repo to EasyPanel
-3. Set environment variables in EasyPanel dashboard
-4. EasyPanel auto-deploys from Dockerfile ✨
+## 6. Expose it publicly
 
-## 🛠️ Adding a New Tool
+Your server needs a public HTTPS URL for Claude.ai to reach it. Options:
+
+- **Reverse proxy on your VPS** - point a subdomain at port 3000 using Caddy or Nginx. Caddy handles HTTPS automatically:
+  ```
+  mcp.yourdomain.com {
+    reverse_proxy localhost:3000
+  }
+  ```
+- **EasyPanel / Railway / Render** - deploy directly from GitHub and they handle the public URL for you (see README for details)
+
+---
+
+## 7. Connect to Claude.ai
+
+1. Go to **Claude.ai** > **Settings** > **Integrations**
+2. Click **Add custom connector**
+3. Paste your server URL: `https://mcp.yourdomain.com/mcp?token=YOUR_MCP_SECRET`
+4. Save and start a new conversation
+
+Try asking: *"What devices are on my Tailscale network?"* - Claude should call `tailscale_status` and list them.
+
+---
+
+## Adding a new tool
 
 Create `src/tools/my_tool.js`:
-```javascript
-export const myToolTool = {
-  name: 'my_tool',
-  description: 'What it does',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      param: { type: 'string', description: 'A parameter' }
-    },
-    required: ['param'],
-  },
-};
 
-export async function handleMyTool(params) {
-  return { success: true, result: 'done' };
+```javascript
+import { z } from 'zod'
+
+export const name = 'my_tool'
+export const description = 'What this tool does'
+
+export const schema = {
+  param: z.string().describe('A required parameter'),
+}
+
+export async function handler({ param }, env) {
+  // your implementation
+  return { success: true, result: param }
 }
 ```
 
-Then import and register in `src/mcp-server.js`.
+Then in `src/mcp-server.js`, import it and register with `server.tool(...)` following the same pattern as the existing four tools.
 
-## 🐛 Troubleshooting
+---
 
-**Container won't start?**
+## Troubleshooting
+
+**Container won't start**
 ```bash
-docker logs mcp-server
+docker logs reacher
 ```
 
-**Need to rebuild?**
-```bash
-docker-compose build --no-cache
-```
+**SSH not working**
+- Check `tailscale_status` to confirm the device shows as online
+- Test manually from your server: `ssh user@hostname`
+- Make sure Tailscale SSH is enabled on the target: `sudo tailscale up --ssh`
 
-**SSH not working?**
-- Ensure Tailscale is running
-- Test manually: `ssh user@device-hostname`
-
-**Telegram not working?**
-- Verify bot token is correct
-- Make sure bot has received at least one message
-
-See full README.md for detailed docs.
+**Claude can't connect**
+- Confirm the server is publicly reachable: `curl https://mcp.yourdomain.com/mcp?token=...`
+- Check your reverse proxy config and that port 3000 is not firewalled
+- Make sure `MCP_SECRET` in your URL matches the one in `.env`

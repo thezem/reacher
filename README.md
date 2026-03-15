@@ -4,7 +4,7 @@ Give Claude SSH access to your entire device network. Reacher is a self-hosted M
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Node.js](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org)
 
-![alt text](/imgs/image.png) ![alt text](image.png) ![alt text](image.png)
+![alt text](/imgs/image.png) ![alt text](/imgs/gist_kb.png) ![alt text](/imgs/reacher.png)
 
 ## What it does
 

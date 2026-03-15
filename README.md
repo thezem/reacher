@@ -56,7 +56,7 @@ See [QUICKSTART.md](QUICKSTART.md) for full setup details including Tailscale SS
 
 1. Go to **Claude.ai** > **Settings** > **Integrations**
 2. Click **Add custom connector**
-3. Paste your server URL (e.g. `https://mcp.yourdomain.com?token=MCP_SECRET`)
+3. Paste your server URL (e.g. `https://yourdomain.com/mcp?token=MCP_SECRET`)
 4. Authenticate with your `MCP_SECRET`
 
 Claude will now have access to all four tools.

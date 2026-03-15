@@ -16,7 +16,7 @@ Give Claude SSH access to your entire device network. Reacher is a self-hosted M
 
 ## What it does
 
-Reacher connects to Claude as a custom MCP connector. Once connected, Claude can SSH into any online device in your Tailscale mesh and run arbitrary shell commands - check running containers, tail logs, restart services, whatever. It can also proxy outbound HTTP requests with per-domain auth token injection (so Claude can hit the GitHub API with your token without you hardcoding it into prompts), and read/write a private knowledge base backed by GitHub Gists that persists across conversations.
+Reacher connects to Claude as a custom MCP connector. Once connected, Claude can SSH into any online device in your Tailscale mesh and run arbitrary shell commands - check running containers, tail logs, restart services, whatever. It can also proxy outbound HTTP requests with per-domain auth token injection (so Claude can hit the GitHub API with your token without you hardcoding it into prompts), read/write a private knowledge base backed by GitHub Gists that persists across conversations, and control a headless browser running on your server.
 
 ## Tools
 
@@ -26,6 +26,7 @@ Reacher connects to Claude as a custom MCP connector. Once connected, Claude can
 | `tailscale_status` | List all devices with online/offline status, IPs, OS | Discover hostnames before SSHing, debug connectivity |
 | `fetch_external` | Proxy HTTP requests with injected auth per domain | Call GitHub, Jira, or any API without pasting tokens |
 | `gist_kb` | Read/write a private knowledge base backed by GitHub Gists | Persist notes, configs, and context across conversations |
+| `browser` | Control a headless browser via CDP using `agent-browser` CLI | Scrape pages, fill forms, take snapshots, automate web tasks |
 
 ## Prerequisites
 
@@ -73,7 +74,7 @@ See [QUICKSTART.md](QUICKSTART.md) for full setup details including Tailscale SS
 3. Paste your server URL (e.g. `https://yourdomain.com/mcp?token=MCP_SECRET`)
 4. Authenticate with your `MCP_SECRET`
 
-Claude will now have access to all four tools.
+Claude will now have access to all tools.
 
 ## Environment variables
 
@@ -84,6 +85,8 @@ Claude will now have access to all four tools.
 | `GITHUB_TOKEN` | Yes | Personal access token for GitHub API calls and Gist read/write |
 | `PROXY_ALLOWED_DOMAINS` | Yes | Comma-separated list of domains `fetch_external` is allowed to call (e.g. `api.github.com,api.linear.app`) |
 | `PORT` | No | HTTP port to listen on. Defaults to `3000` |
+| `BROWSER_CDP_HOST` | No | Host of the CDP-compatible browser to connect to. Defaults to `127.0.0.1` |
+| `BROWSER_CDP_PORT` | No | Port of the CDP-compatible browser. Defaults to `9222` |
 
 ## Adding your own tools
 

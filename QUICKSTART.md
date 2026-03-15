@@ -96,7 +96,7 @@ curl -X POST http://localhost:3000/mcp?token=YOUR_MCP_SECRET \
   -d '{"jsonrpc": "2.0", "method": "tools/list", "id": 1}'
 ```
 
-You should get back a JSON response listing the four tools.
+You should get back a JSON response listing all tools.
 
 ---
 
@@ -165,3 +165,8 @@ docker logs reacher
 - Confirm the server is publicly reachable: `curl https://mcp.yourdomain.com/mcp?token=...`
 - Check your reverse proxy config and that port 3000 is not firewalled
 - Make sure `MCP_SECRET` in your URL matches the one in `.env`
+
+**Browser tool not working**
+- Make sure `agent-browser` is installed on the server: `npm install -g agent-browser`
+- Make sure a CDP-compatible browser (e.g. [Lightpanda](https://github.com/lightpanda-io/lightpanda)) is running and listening on the configured host/port
+- Default CDP endpoint is `ws://127.0.0.1:9222` — override with `BROWSER_CDP_HOST` and `BROWSER_CDP_PORT` in `.env`

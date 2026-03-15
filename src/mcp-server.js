@@ -10,6 +10,7 @@ import * as sshExec from './tools/ssh_exec.js'
 import * as tailscaleStatus from './tools/tailscale_status.js'
 import * as fetchExternal from './tools/fetch_external.js'
 import * as gistKb from './tools/gist_kb.js'
+import * as browser from './tools/browser.js'
 
 /**
  * Create and configure the MCP server with all tools registered.
@@ -51,6 +52,14 @@ export function createMCPServer(env) {
   // -------------------------------------------------------------------------
   server.tool(gistKb.name, gistKb.description, gistKb.schema, async args => {
     const result = await gistKb.handler(args, env)
+    return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
+  })
+
+  // -------------------------------------------------------------------------
+  // browser - uses BROWSER_CDP_HOST and BROWSER_CDP_PORT env vars
+  // -------------------------------------------------------------------------
+  server.tool(browser.name, browser.description, browser.schema, async args => {
+    const result = await browser.handler(args, env)
     return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
   })
 

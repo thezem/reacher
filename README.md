@@ -4,6 +4,8 @@ Give Claude SSH access to your entire device network. Reacher is a self-hosted M
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Node.js](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org)
 
+![alt text](/imgs/image.png) ![alt text](image.png) ![alt text](image.png)
+
 ## What it does
 
 Reacher connects to Claude as a custom MCP connector. Once connected, Claude can SSH into any online device in your Tailscale mesh and run arbitrary shell commands - check running containers, tail logs, restart services, whatever. It can also proxy outbound HTTP requests with per-domain auth token injection (so Claude can hit the GitHub API with your token without you hardcoding it into prompts), and read/write a private knowledge base backed by GitHub Gists that persists across conversations.

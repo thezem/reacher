@@ -1,407 +1,93 @@
-# Personal MCP Server
+# Reacher
 
-A modular, production-ready MCP (Model Context Protocol) server built for personal use on a Linux VPS. Connect it to Claude.ai as a custom connector to get powerful terminal and system integration.
+Give Claude SSH access to your entire device network. Reacher is a self-hosted MCP server that lets Claude run commands on any machine in your Tailscale network, proxy authenticated API requests, and maintain a persistent knowledge base - all through a single server you control.
 
-## Features
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Node.js](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org)
 
-- **SSH Execute**: Run shell commands on remote devices via Tailscale SSH
-- **Tailscale Status**: Monitor all devices in your Tailscale network
-- **File Upload**: Upload files to T-Store and get public shareable URLs
-- **Telegram Integration**: Send messages and files directly to Telegram
+## What it does
 
-## Architecture
+Reacher connects to Claude as a custom MCP connector. Once connected, Claude can SSH into any online device in your Tailscale mesh and run arbitrary shell commands - check running containers, tail logs, restart services, whatever. It can also proxy outbound HTTP requests with per-domain auth token injection (so Claude can hit the GitHub API with your token without you hardcoding it into prompts), and read/write a private knowledge base backed by GitHub Gists that persists across conversations.
 
-```
-src/
-├── tools/              # Individual tool implementations
-│   ├── ssh_exec.js
-│   ├── tailscale_status.js
-│   ├── upload_file.js
-│   └── send_telegram.js
-├── lib/                # Shared utilities
-│   ├── tailscale-client.js
-│   ├── telegram-client.js
-│   └── tstore-client.js
-└── mcp-server.js       # Core MCP server setup
-index.js               # Entry point with HTTP transport
-```
+## Tools
+
+| Tool | What it does | Key use case |
+| --- | --- | --- |
+| `ssh_exec` | Run shell commands on any Tailscale device | Manage servers, check logs, run deployments |
+| `tailscale_status` | List all devices with online/offline status, IPs, OS | Discover hostnames before SSHing, debug connectivity |
+| `fetch_external` | Proxy HTTP requests with injected auth per domain | Call GitHub, Jira, or any API without pasting tokens |
+| `gist_kb` | Read/write a private knowledge base backed by GitHub Gists | Persist notes, configs, and context across conversations |
+
+## Prerequisites
+
+- A [Tailscale](https://tailscale.com) account with your devices enrolled in a mesh network
+- Node.js 18+ (or Docker)
+- A VPS or always-on machine to host the server (it needs to be reachable from Claude.ai)
+- A Tailscale API key and a GitHub personal access token
 
 ## Setup
 
-### Prerequisites
+Copy `.env.example` to `.env` and fill in your credentials, then choose your runtime:
 
-- Docker (for containerized deployment) OR Node.js 18+ (for local development)
-- Tailscale account with API key
-- Telegram bot token
-
-### Installation
-
-**Option 1: Docker (Recommended for production)**
+**Docker (recommended)**
 
 ```bash
-git clone <repo-url>
-cd personal-mcp-server
+git clone https://github.com/your-username/reacher.git
+cd reacher
 cp .env.example .env
-nano .env  # Fill in your credentials
-docker build -t mcp-server .
-docker run -p 3000:3000 --env-file .env mcp-server
+# edit .env with your keys
+docker build -t reacher .
+docker run -d -p 3000:3000 --env-file .env --restart unless-stopped --name reacher reacher
 ```
 
-**Option 2: Local development with Node.js**
-
-1. **Clone and install dependencies**
-   ```bash
-   git clone <repo-url>
-   cd personal-mcp-server
-   npm install
-   ```
-
-2. **Create `.env` file from example**
-   ```bash
-   cp .env.example .env
-   ```
-
-3. **Get your credentials**
-
-   **Tailscale API Key:**
-   - Go to https://login.tailscale.com/admin/settings/keys
-   - Create a new API key with "Devices (read-only)" scope
-   - Copy it to `.env`
-
-   **Telegram Bot Token:**
-   - Chat with @BotFather on Telegram
-   - Send `/newbot` and follow prompts
-   - Copy the token to `.env`
-
-   **Telegram Chat ID:**
-   - Send any message to your bot
-   - Open `https://api.telegram.org/bot<YOUR_TOKEN>/getUpdates`
-   - Find your chat ID in the response
-   - Copy it to `.env`
-
-4. **Test locally**
-   ```bash
-   npm run dev
-   # Server should start on http://localhost:3000
-   ```
-
-## Deployment to VPS with Docker
-
-The server is containerized for easy deployment. EasyPanel can pull and deploy directly from GitHub.
-
-### Docker Setup
-
-1. **Build the image locally** (for testing)
-   ```bash
-   npm run docker:build
-   ```
-
-2. **Run locally**
-   ```bash
-   npm run docker:run
-   ```
-
-3. **For production on EasyPanel**
-   - Connect your GitHub repo to EasyPanel
-   - EasyPanel will automatically:
-     - Pull the latest code
-     - Build the Docker image
-     - Run the container with PORT exposed
-   - Set environment variables in EasyPanel dashboard
-   - Container respects `PORT` env var (default: 3000)
-
-### Manual Docker Deployment
-
-If deploying without EasyPanel:
+**Bare Node**
 
 ```bash
-# SSH into your VPS
-ssh user@your-vps
-
-# Clone repo
-git clone <repo-url>
-cd personal-mcp-server
-
-# Create .env with your credentials
+git clone https://github.com/your-username/reacher.git
+cd reacher
+npm install
 cp .env.example .env
-nano .env  # Edit with your keys
-
-# Build image
-docker build -t mcp-server .
-
-# Run as daemon with auto-restart
-docker run -d \
-  -p 3000:3000 \
-  --env-file .env \
-  --restart unless-stopped \
-  --name mcp-server \
-  mcp-server
+# edit .env with your keys
+node index.js
 ```
 
-### Docker Commands
-
-```bash
-# View logs
-docker logs -f mcp-server
-
-# Restart container
-docker restart mcp-server
-
-# Stop container
-docker stop mcp-server
-
-# Remove container
-docker rm mcp-server
-
-# View running containers
-docker ps
-```
-
-### Using docker-compose (Recommended for local dev)
-
-```bash
-# Start the server
-docker-compose up
-
-# Start in background
-docker-compose up -d
-
-# View logs
-docker-compose logs -f
-
-# Stop
-docker-compose down
-```
-
-The `docker-compose.yml` includes volume mounts for development, so changes to `src/` and `index.js` will auto-reload if you uncomment the `npm run dev` command.
-
-## Tools Reference
-
-### `ssh_exec`
-
-Execute commands on remote devices via Tailscale SSH.
-
-**Parameters:**
-- `hostname` (string, required): Tailscale device hostname
-- `command` (string, required): Shell command to execute
-- `user` (string, optional, default: "hazem"): SSH user
-
-**Example:**
-```json
-{
-  "hostname": "mydevice",
-  "command": "docker ps",
-  "user": "hazem"
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "hostname": "mydevice",
-  "user": "hazem",
-  "stdout": "CONTAINER ID   IMAGE   STATUS\nab12cd34ef   nginx   Up",
-  "stderr": "",
-  "exitCode": 0
-}
-```
-
----
-
-### `tailscale_status`
-
-Get status of all devices in your Tailscale network.
-
-**Parameters:** None
-
-**Response:**
-```json
-{
-  "success": true,
-  "summary": {
-    "total": 5,
-    "online": 4,
-    "offline": 1
-  },
-  "devices": [
-    {
-      "name": "Personal MacBook",
-      "hostname": "macbook-personal",
-      "online": "online",
-      "os": "Darwin",
-      "ips": ["100.102.45.67"],
-      "clientVersion": "1.68.0",
-      "lastSeen": "2025-03-13T10:30:00Z"
-    }
-  ]
-}
-```
-
----
-
-### `upload_file`
-
-Upload a file to T-Store and get a public shareable URL.
-
-**Parameters:**
-- `file_path` (string, required): Absolute path to file on the VPS
-
-**Example:**
-```json
-{
-  "file_path": "/home/hazem/documents/report.pdf"
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "file_path": "/home/hazem/documents/report.pdf",
-  "download_url": "https://tstore.ouim.me/files/abc123def456",
-  "message": "File uploaded successfully. Share this link: https://tstore.ouim.me/files/abc123def456"
-}
-```
-
----
-
-### `send_telegram`
-
-Send messages or files to Telegram.
-
-**Parameters:**
-- `type` (string, required): "message" or "file"
-- `content` (string, required): Text content or file path
-- `caption` (string, optional): Caption for files
-
-**Examples:**
-
-Send a text message:
-```json
-{
-  "type": "message",
-  "content": "Hello from my MCP server!"
-}
-```
-
-Send a file (auto-detects image vs document):
-```json
-{
-  "type": "file",
-  "content": "/home/hazem/screenshots/screenshot.png",
-  "caption": "Screenshot from deployment"
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "type": "message",
-  "messageId": 12345
-}
-```
-
-## Adding New Tools
-
-Adding a new tool is simple:
-
-1. **Create a new file in `src/tools/`**
-   ```javascript
-   // src/tools/my_tool.js
-   
-   export const myToolTool = {
-     name: 'my_tool',
-     description: 'What this tool does',
-     inputSchema: {
-       type: 'object',
-       properties: {
-         param1: {
-           type: 'string',
-           description: 'Description of param1',
-         },
-       },
-       required: ['param1'],
-     },
-   };
-   
-   export async function handleMyTool(params) {
-     const { param1 } = params;
-     // Your implementation
-     return { success: true, result: 'something' };
-   }
-   ```
-
-2. **Import it in `src/mcp-server.js`**
-   ```javascript
-   import { myToolTool, handleMyTool } from './tools/my_tool.js';
-   ```
-
-3. **Add it to the tools array**
-   ```javascript
-   const tools = [
-     sshExecTool,
-     tailscaleStatusTool,
-     uploadFileTool,
-     sendTelegramTool,
-     myToolTool,  // ← Add here
-   ];
-   ```
-
-4. **Add it to the handlers map**
-   ```javascript
-   const handlers = {
-     ssh_exec: handleSshExec,
-     tailscale_status: handleTailscaleStatus,
-     upload_file: handleUploadFile,
-     send_telegram: handleSendTelegram,
-     my_tool: handleMyTool,  // ← Add here
-   };
-   ```
-
-That's it! The tool is now registered and available.
+See [QUICKSTART.md](QUICKSTART.md) for full setup details including Tailscale SSH configuration.
 
 ## Connecting to Claude.ai
 
-1. Go to [Claude.ai](https://claude.ai)
-2. In Settings → Connected apps
-3. Add a new custom connector
-4. Enter your server URL (e.g., `https://mcp.yourdomain.com`)
-5. Test the connection
+1. Go to **Claude.ai** > **Settings** > **Integrations**
+2. Click **Add custom connector**
+3. Paste your server URL (e.g. `https://mcp.yourdomain.com?token=MCP_SECRET`)
+4. Authenticate with your `MCP_SECRET`
 
-Claude will now have access to all your tools!
+Claude will now have access to all four tools.
 
-## Environment Variables
+## Environment variables
 
-Required:
-- `TAILSCALE_API_KEY` - Tailscale API key for device access
-- `TELEGRAM_BOT_TOKEN` - Telegram bot token
-- `DEFAULT_CHAT_ID` - Default Telegram chat to send messages to
+| Variable | Required | Description |
+| --- | --- | --- |
+| `MCP_SECRET` | Yes | Shared secret for authenticating requests to this server |
+| `TAILSCALE_API_KEY` | Yes | API key for querying your Tailscale network. Get one at tailscale.com/admin/settings/keys |
+| `GITHUB_TOKEN` | Yes | Personal access token for GitHub API calls and Gist read/write |
+| `PROXY_ALLOWED_DOMAINS` | Yes | Comma-separated list of domains `fetch_external` is allowed to call (e.g. `api.github.com,api.linear.app`) |
+| `PORT` | No | HTTP port to listen on. Defaults to `3000` |
 
-Optional:
-- `PORT` - Server port (default: 3000)
-- `NODE_ENV` - Set to "production" for production deployments
+## Adding your own tools
 
-## Troubleshooting
+Each tool is a self-contained file in `src/tools/`. To add a new one:
 
-**"TAILSCALE_API_KEY is not set"**
-- Check that `.env` file exists and has the correct key
-- Make sure you're using a valid Tailscale API key from the admin dashboard
+1. Create `src/tools/my_tool.js` - export `name`, `description`, `schema` (a Zod shape), and `handler`
+2. Import it in `src/mcp-server.js` and register it with `server.tool(...)`
 
-**SSH commands not working**
-- Ensure Tailscale is running and you can SSH to the device manually
-- Check that the `user` parameter matches your SSH user on that device
-- Tailscale devices must be online and reachable
+That's the whole pattern. Look at any existing tool file as a reference.
 
-**Telegram messages not sending**
-- Verify the bot token is correct
-- Make sure the bot has sent at least one message to get your chat ID
-- Check that `DEFAULT_CHAT_ID` is correct
+## Deployment options
 
-**Port already in use**
-- Change `PORT` in `.env` to a different port
-- Or kill the process: `lsof -ti:3000 | xargs kill -9`
+- **Docker on any VPS** - build the image, run with `--restart unless-stopped`, done
+- **EasyPanel** - connect your GitHub repo, set env vars in the dashboard, it handles builds automatically
+- **Railway / Render** - standard Node.js service, set env vars, deploy from GitHub
+- **PM2 on a bare VPS** - `pm2 start index.js --name reacher && pm2 save`
+
+The server needs to be publicly reachable over HTTPS for Claude.ai to connect. Most VPS hosts + a reverse proxy (Caddy, Nginx, Traefik) handles this.
 
 ## License
 

@@ -11,6 +11,8 @@ import * as tailscaleStatus from './tools/tailscale_status.js'
 import * as fetchExternal from './tools/fetch_external.js'
 import * as gistKb from './tools/gist_kb.js'
 import * as browser from './tools/browser.js'
+import * as claudeCodeExec from './tools/claude_code_exec.js'
+import * as claudeCodeStatus from './tools/claude_code_status.js'
 
 /**
  * Create and configure the MCP server with all tools registered.
@@ -60,6 +62,16 @@ export function createMCPServer(env) {
   // -------------------------------------------------------------------------
   server.tool(browser.name, browser.description, browser.schema, async args => {
     const result = await browser.handler(args, env)
+    return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
+  })
+
+  server.tool(claudeCodeExec.name, claudeCodeExec.description, claudeCodeExec.schema, async args => {
+    const result = await claudeCodeExec.handler(args)
+    return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
+  })
+
+  server.tool(claudeCodeStatus.name, claudeCodeStatus.description, claudeCodeStatus.schema, async args => {
+    const result = await claudeCodeStatus.handler(args)
     return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
   })
 

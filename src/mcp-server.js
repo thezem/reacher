@@ -11,6 +11,7 @@ import * as tailscaleStatus from './tools/tailscale_status.js'
 import * as fetchExternal from './tools/fetch_external.js'
 import * as gistKb from './tools/gist_kb.js'
 import * as browser from './tools/browser.js'
+import * as githubSearch from './tools/github_search.js'
 
 /**
  * Create and configure the MCP server with all tools registered.
@@ -60,6 +61,14 @@ export function createMCPServer(env) {
   // -------------------------------------------------------------------------
   server.tool(browser.name, browser.description, browser.schema, async args => {
     const result = await browser.handler(args, env)
+    return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
+  })
+
+  // -------------------------------------------------------------------------
+  // github_search - needs FETCH_EXTERNAL_TOKEN_MAP for token injection
+  // -------------------------------------------------------------------------
+  server.tool(githubSearch.name, githubSearch.description, githubSearch.schema, async args => {
+    const result = await githubSearch.handler(args, env.PROXY_ALLOWED_DOMAINS, env)
     return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
   })
 

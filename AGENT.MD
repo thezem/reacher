@@ -6,7 +6,7 @@ This file helps Claude understand how to use Reacher's tools effectively. Paste 
 
 ## What is Reacher?
 
-Reacher is a self-hosted MCP server connected to this Claude session. It gives Claude four capabilities: running shell commands on remote machines, discovering your Tailscale network, proxying authenticated API calls, and maintaining a persistent knowledge base via GitHub Gists.
+Reacher is a self-hosted MCP server connected to this Claude session. It gives Claude five capabilities: running shell commands on remote machines, discovering your Tailscale network, proxying authenticated API calls, searching GitHub, and maintaining a persistent knowledge base via GitHub Gists.
 
 ---
 
@@ -110,6 +110,57 @@ method: GET
 ```
 
 **If a domain is blocked:** the tool returns `{ success: false, error: "Domain not allowed" }`. Tell the user to add the domain to `PROXY_ALLOWED_DOMAINS` in their `.env` and restart the server.
+
+---
+
+### `github_search`
+
+Searches GitHub for pull requests or commits by author and date range. Returns clean minimal output with only the essential fields.
+
+**Parameters:**
+
+- `type` - "prs" or "commits"
+- `repo` - repository in format "owner/repo" (e.g. "brainstormforce/zipwp-nextjs")
+- `author` - GitHub username (e.g. "thezem")
+- `created_after` - ISO date string (e.g. "2026-03-02") to search for items created after this date
+- `per_page` - number of results per page (default: 25, max: 100)
+
+**Output for PRs:**
+
+```json
+[
+  {
+    "number": 123,
+    "title": "Fix authentication bug",
+    "url": "https://github.com/owner/repo/pull/123",
+    "state": "open",
+    "draft": false,
+    "merged": false,
+    "created_at": "2026-03-09"
+  }
+]
+```
+
+**Output for commits:**
+
+```json
+[
+  {
+    "sha": "02394b8",
+    "message": "Fix authentication bug",
+    "date": "2026-03-11",
+    "url": "https://github.com/owner/repo/commit/02394b8..."
+  }
+]
+```
+
+**When to use:**
+
+- User asks "what did I work on in the past week?" - search commits by author and date
+- User needs to find recently opened PRs from a team member - search PRs by author
+- Gathering work history for a changelog or retrospective
+
+**Note:** Requires GitHub token to be configured. The token is injected automatically like with `fetch_external`.
 
 ---
 

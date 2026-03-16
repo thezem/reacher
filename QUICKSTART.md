@@ -145,7 +145,7 @@ export async function handler({ param }, env) {
 }
 ```
 
-Then in `src/mcp-server.js`, import it and register with `server.tool(...)` following the same pattern as the existing four tools.
+Then in `src/mcp-server.js`, import it and register with `server.tool(...)` following the same pattern as the existing tools.
 
 ---
 

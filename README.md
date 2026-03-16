@@ -25,6 +25,7 @@ Reacher connects to Claude as a custom MCP connector. Once connected, Claude can
 | `ssh_exec` | Run shell commands on any Tailscale device | Manage servers, check logs, run deployments |
 | `tailscale_status` | List all devices with online/offline status, IPs, OS | Discover hostnames before SSHing, debug connectivity |
 | `fetch_external` | Proxy HTTP requests with injected auth per domain | Call GitHub, Jira, or any API without pasting tokens |
+| `github_search` | Search GitHub for pull requests or commits | Find work by author and date range with minimal output |
 | `gist_kb` | Read/write a private knowledge base backed by GitHub Gists | Persist notes, configs, and context across conversations |
 | `browser` | Control a headless browser via CDP using `agent-browser` CLI | Scrape pages, fill forms, take snapshots, automate web tasks |
 

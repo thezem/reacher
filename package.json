@@ -1,9 +1,14 @@
 {
-  "name": "personal-mcp-server",
-  "version": "1.0.0",
+  "name": "reacher",
+  "version": "0.1.0",
   "type": "module",
-  "description": "Modular MCP server for personal tools - SSH, Tailscale, file upload, Telegram",
+  "description": "Self-hosted MCP server for SSH, API proxying, browser automation, and persistent AI memory",
   "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thezem/reacher"
+  },
+  "homepage": "https://github.com/thezem/reacher#readme",
   "scripts": {
     "start": "node index.js",
     "dev": "node --watch index.js",

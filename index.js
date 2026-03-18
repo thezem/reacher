@@ -9,6 +9,7 @@ import 'dotenv/config'
 import express from 'express'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
 import { createMCPServer } from './src/mcp-server.js'
+import { config } from './src/lib/config.js'
 
 // ---------------------------------------------------------------------------
 // Environment validation
@@ -55,7 +56,11 @@ async function main() {
 
   // Health check
   app.get('/health', (_req, res) => {
-    res.json({ status: 'ok', timestamp: new Date().toISOString() })
+    res.json({
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      dry_run: config.dry_run,
+    })
   })
 
   // MCP endpoint - a fresh transport is created per request (stateless / no sessions)
@@ -76,6 +81,10 @@ async function main() {
     console.log(`   POST http://localhost:${port}/mcp`)
     console.log(`   GET  http://localhost:${port}/health`)
     console.log(`📋 Tools: ssh_exec, tailscale_status, upload_file, send_telegram`)
+
+    if (config.dry_run) {
+      console.log(`⚠️  DRY RUN MODE - ssh_exec will not execute commands`)
+    }
   })
 
   // Graceful shutdown

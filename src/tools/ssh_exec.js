@@ -3,9 +3,10 @@
  * Runs shell commands on remote devices via Tailscale SSH
  */
 
-import { z } from 'zod';
-import fs from 'fs';
-import { spawn } from 'child_process';
+import { z } from 'zod'
+import fs from 'fs'
+import { spawn } from 'child_process'
+import { config } from '../lib/config.js'
 
 /**
  * Encode a string as Base64-encoded UTF-16LE for PowerShell -EncodedCommand
@@ -45,6 +46,59 @@ export const schema = {
  * @param {{ hostname: string, command: string, user: string, shell: string }} args
  */
 export async function handler({ hostname, command, user, shell = 'cmd' }) {
+  // ---
+  // Safety checks
+  // ---
+
+  // Check for blocked commands
+  const blockedCommands = config.ssh.blocked_commands || []
+  for (const blocked of blockedCommands) {
+    if (command.toLowerCase().includes(blocked.toLowerCase())) {
+      return {
+        success: false,
+        blocked: true,
+        reason: 'Command blocked by reacher config',
+        matched_rule: blocked,
+        hostname,
+        user,
+        command,
+      }
+    }
+  }
+
+  // Check for allowed directories
+  const allowedDirs = config.ssh.allowed_dirs || []
+  if (allowedDirs.length > 0) {
+    // Extract paths from command (tokens starting with /, ~, or ./)
+    const pathTokens = command.match(/(?:^|\s)(\/[\S]*|~[\S]*|\.\/[\S]*)/g) || []
+    const paths = pathTokens.map(p => p.trim())
+
+    for (const path of paths) {
+      const isAllowed = allowedDirs.some(allowedDir => path.startsWith(allowedDir))
+      if (!isAllowed) {
+        return {
+          success: false,
+          blocked: true,
+          reason: 'Path not in allowed directories',
+          hostname,
+          user,
+          command,
+        }
+      }
+    }
+  }
+
+  // Dry-run mode (after safety checks so blocked commands are still blocked)
+  if (config.dry_run) {
+    return {
+      success: true,
+      dry_run: true,
+      would_execute: command,
+      hostname,
+      user,
+    }
+  }
+
   // Verify ssh binary exists in the container
   if (!fs.existsSync('/usr/bin/ssh')) {
     return {
@@ -56,7 +110,7 @@ export async function handler({ hostname, command, user, shell = 'cmd' }) {
       stderr: 'SSH binary not found at /usr/bin/ssh. Ensure openssh-client is installed in the container.',
       exitCode: 127,
       error: 'ssh: command not found',
-    };
+    }
   }
 
   // Set proper permissions on the SSH key (SSH requires 600 for private keys)

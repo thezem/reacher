@@ -13,6 +13,9 @@ import * as gistKb from './tools/gist_kb.js'
 import * as browser from './tools/browser.js'
 import * as githubSearch from './tools/github_search.js'
 
+// Import audit logging
+import { auditLog } from './lib/audit.js'
+
 /**
  * Create and configure the MCP server with all tools registered.
  * @param {Object} env - process.env (or subset with required keys)
@@ -29,6 +32,7 @@ export function createMCPServer(env) {
   // -------------------------------------------------------------------------
   server.tool(sshExec.name, sshExec.description, sshExec.schema, async args => {
     const result = await sshExec.handler(args)
+    await auditLog(sshExec.name, args, result)
     return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
   })
 
@@ -37,6 +41,7 @@ export function createMCPServer(env) {
   // -------------------------------------------------------------------------
   server.tool(tailscaleStatus.name, tailscaleStatus.description, tailscaleStatus.schema, async args => {
     const result = await tailscaleStatus.handler(args, env.TAILSCALE_API_KEY)
+    await auditLog(tailscaleStatus.name, args, result)
     return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
   })
 
@@ -45,6 +50,7 @@ export function createMCPServer(env) {
   // -------------------------------------------------------------------------
   server.tool(fetchExternal.name, fetchExternal.description, fetchExternal.schema, async args => {
     const result = await fetchExternal.handler(args, env.PROXY_ALLOWED_DOMAINS, env)
+    await auditLog(fetchExternal.name, args, result)
     return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
   })
 
@@ -53,6 +59,7 @@ export function createMCPServer(env) {
   // -------------------------------------------------------------------------
   server.tool(gistKb.name, gistKb.description, gistKb.schema, async args => {
     const result = await gistKb.handler(args, env)
+    await auditLog(gistKb.name, args, result)
     return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
   })
 
@@ -61,6 +68,7 @@ export function createMCPServer(env) {
   // -------------------------------------------------------------------------
   server.tool(browser.name, browser.description, browser.schema, async args => {
     const result = await browser.handler(args, env)
+    await auditLog(browser.name, args, result)
     return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
   })
 
@@ -69,6 +77,7 @@ export function createMCPServer(env) {
   // -------------------------------------------------------------------------
   server.tool(githubSearch.name, githubSearch.description, githubSearch.schema, async args => {
     const result = await githubSearch.handler(args, env.PROXY_ALLOWED_DOMAINS, env)
+    await auditLog(githubSearch.name, args, result)
     return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
   })
 

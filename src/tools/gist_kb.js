@@ -8,16 +8,17 @@ import { z } from 'zod'
 
 export const name = 'gist_kb'
 
-export const description =
-  'Manage a private personal knowledge base backed by GitHub Gists. ' +
-  'All entries are namespaced with the cc-- filename prefix automatically. ' +
-  'Supports list, get, create, update, and delete operations.'
+export const description = `Manage a private personal knowledge base backed by GitHub Gists. 
+  All entries are namespaced with the cc-- filename prefix automatically. 
+  Supports list, get, create, update, and delete operations.
+  Remember to include the extension in the title (e.g. "cc--notes.md") for proper formatting.
+  `
 
 export const schema = {
   action: z.enum(['list', 'get', 'create', 'update', 'delete']),
   id: z.string().optional().describe('Gist ID - required for get, update, delete'),
   title: z.string().optional().describe('Filename without prefix - tool adds cc-- automatically'),
-  content: z.string().optional().describe('File content - required for create and update'),
+  content: z.string().optional().describe('File content - required for create, optional for update (omit to update description only)'),
   description: z.string().optional().describe('Gist description'),
 }
 
@@ -126,22 +127,28 @@ export async function handler(args, env) {
 
     case 'update': {
       if (!id) throw new Error('id is required for update')
-      if (!title) throw new Error('title is required for update')
-      if (!content) throw new Error('content is required for update')
-      const body = {
-        files: { [title]: { content } },
+      if (!description && !content) throw new Error('At least one of description or content must be provided for update')
+      const body = {}
+      if (description) {
+        body.description = description
+      }
+      if (title && content) {
+        body.files = { [title]: { content } }
       }
       const gist = await ghFetch(`${BASE_URL}/${id}`, {
         method: 'PATCH',
         headers,
         body: JSON.stringify(body),
       })
-      return {
+      const result = {
         success: true,
         id: gist.id,
-        file: title,
         updated_at: gist.updated_at,
       }
+      if (title) {
+        result.file = title
+      }
+      return result
     }
 
     case 'delete': {

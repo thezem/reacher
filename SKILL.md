@@ -15,6 +15,7 @@ Before starting, confirm the user has:
 5. **A VPS or always-on server** - To host the Reacher server 24/7 (needs public HTTPS access)
 
 **Action:** Ask the user to confirm they have each of these. If anything is missing, provide setup links:
+
 - Node.js: https://nodejs.org (choose LTS 18+)
 - Docker: https://www.docker.com/products/docker-desktop
 - Tailscale: https://tailscale.com/download
@@ -24,10 +25,10 @@ Before starting, confirm the user has:
 
 ## Step 2: Clone the Repository
 
-Use the stable v0.1.0 tag:
+Use the stable v0.1.1 tag:
 
 ```bash
-git clone --branch v0.1.0 https://github.com/thezem/reacher
+git clone --branch v0.1.1 https://github.com/thezem/reacher
 cd reacher
 ```
 
@@ -40,6 +41,7 @@ cd reacher
 ### 3a. Create `reacher.config.yaml`
 
 Copy the example config:
+
 ```bash
 cp reacher.config.example.yaml reacher.config.yaml
 ```
@@ -47,17 +49,21 @@ cp reacher.config.example.yaml reacher.config.yaml
 Then open `reacher.config.yaml` in a text editor and explain each section:
 
 **SSH Configuration:**
+
 - `blocked_commands` - Commands to block from execution (e.g., "rm -rf", "dd"). These are checked as substrings.
 - `allowed_dirs` - Directories where SSH commands are allowed (optional). Leave empty to allow all directories.
 
 **Audit Configuration:**
+
 - `enabled` - Set to `true` to log all tool calls to an audit log
 - `log_path` - Where to save the audit log (default: `./reacher-audit.log`)
 
 **Dry-run Mode:**
+
 - Set `dry_run: true` to test commands without executing them
 
 **Action:** Walk through the config with the user. Ask:
+
 - "Do you want to block specific dangerous commands? (Yes/No)"
 - If yes: "What commands? (rm -rf is already a good start)"
 - "Do you want to restrict SSH to certain directories? (Typically no for personal use)"
@@ -66,6 +72,7 @@ Then open `reacher.config.yaml` in a text editor and explain each section:
 ### 3b. Create `.env`
 
 Copy the example env file:
+
 ```bash
 cp .env.example .env
 ```
@@ -73,11 +80,13 @@ cp .env.example .env
 Open `.env` in your editor and walk through each variable:
 
 **MCP_SECRET** (required)
+
 - A random token Claude.ai uses to authenticate with your server
 - Generate one: `openssl rand -hex 32` (or just a long random string)
 - Example: `MCP_SECRET=a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4`
 
 **TAILSCALE_API_KEY** (required)
+
 - Allows Reacher to query your Tailscale device network
 - Go to: https://login.tailscale.com/admin/settings/keys
 - Click "Generate auth key"
@@ -85,6 +94,7 @@ Open `.env` in your editor and walk through each variable:
 - Paste the key into `.env`
 
 **GITHUB_TOKEN** (required)
+
 - Personal access token for GitHub API and gist knowledge base
 - Go to: https://github.com/settings/tokens
 - Create a new fine-grained token
@@ -92,31 +102,38 @@ Open `.env` in your editor and walk through each variable:
 - Paste it into `.env`
 
 **PROXY_ALLOWED_DOMAINS** (required)
+
 - Comma-separated list of domains `fetch_external` is allowed to call
 - Start with: `PROXY_ALLOWED_DOMAINS=api.github.com`
 - You can add more later (e.g., `api.github.com,api.linear.app,api.notion.com`)
 
 **DRY_RUN** (optional)
+
 - Set to `true` to test commands without executing them
 - Default: `false`
 
 **AUDIT_ENABLED** (optional)
+
 - Set to `true` to enable audit logging
 - Default: `true`
 
 **AUDIT_LOG_PATH** (optional)
+
 - Path to the audit log file
 - Default: `./reacher-audit.log`
 
 **SSH_BLOCKED_COMMANDS** (optional)
+
 - Comma-separated list of commands to block
 - Default: `rm -rf /,shutdown,reboot,mkfs,dd,format`
 
 **SSH_ALLOWED_DIRS** (optional)
+
 - Comma-separated list of directories where SSH is allowed
 - Default: empty (no restriction)
 
 **ACTION:** Collect values from the user:
+
 1. Generate an MCP_SECRET with them
 2. Get their Tailscale API key
 3. Get their GitHub token
@@ -133,6 +150,7 @@ ssh-keygen -t ed25519 -f ~/.ssh/reacher-key -N ""
 ```
 
 This creates two files:
+
 - `~/.ssh/reacher-key` (private key - keep secret)
 - `~/.ssh/reacher-key.pub` (public key - share with machines)
 
@@ -157,6 +175,7 @@ docker compose up -d
 ```
 
 This starts the server in the background. Check it's running:
+
 ```bash
 docker logs reacher
 ```
@@ -181,6 +200,7 @@ npm start
 ```
 
 Or for development with auto-reload:
+
 ```bash
 npm run dev
 ```

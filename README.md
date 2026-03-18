@@ -2,7 +2,7 @@
 
 Reacher is a self-hosted MCP server that turns Claude into a personal infrastructure agent - with authenticated access to your machines, your APIs, and persistent memory across conversations.
 
-[![v0.1.0](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://github.com/thezem/reacher/releases/tag/v0.1.0) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Node.js](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org)
+[![v0.1.1](https://img.shields.io/badge/version-0.1.1-blue.svg)](https://github.com/thezem/reacher/releases/tag/v0.1.1) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Node.js](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org)
 
 <table>
   <tr>
@@ -89,7 +89,7 @@ Copy `.env.example` to `.env` and `reacher.config.example.yaml` to `reacher.conf
 **Docker (recommended)**
 
 ```bash
-git clone --branch v0.1.0 https://github.com/thezem/reacher.git
+git clone --branch v0.1.1 https://github.com/thezem/reacher.git
 cd reacher
 cp reacher.config.example.yaml reacher.config.yaml
 cp .env.example .env
@@ -100,7 +100,7 @@ docker compose up -d
 **Bare Node**
 
 ```bash
-git clone --branch v0.1.0 https://github.com/thezem/reacher.git
+git clone --branch v0.1.1 https://github.com/thezem/reacher.git
 cd reacher
 npm install
 cp reacher.config.example.yaml reacher.config.yaml

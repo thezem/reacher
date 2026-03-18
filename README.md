@@ -7,10 +7,12 @@ Reacher is a self-hosted MCP server that turns Claude into a personal infrastruc
 <table>
   <tr>
     <td><img src="/imgs/image.png" alt="…" width="320" /></td>
-    <td><img src="/imgs/gist_kb.png" alt="…" width="320" /></td>
+     <td colspan="2">
+     <video src="https://i.ouim.me/i/3c3ea779.mp4" alt="Claude reviewing exploring code at my machine with Reacher SSH tool" width="500" controls autoplay loop muted></video>
+</td>
+
   </tr>
   <tr>
-    <td colspan="2"><img src="/imgs/reacher.png" alt="Claude reviewing exploring code at my machine with Reacher SSH tool" width="640" /></td>
     <td colspan="2"><img src="/imgs/ship.png" alt="Claude + Reacher MCP helping create a tag and a release for Reacher repo" width="640" /></td>
   </tr>
 </table>

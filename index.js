@@ -9,13 +9,14 @@ import 'dotenv/config'
 import express from 'express'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
 import { createMCPServer } from './src/mcp-server.js'
+import { config } from './src/lib/config.js'
 
 // ---------------------------------------------------------------------------
 // Environment validation
 // ---------------------------------------------------------------------------
 
 function validateEnv() {
-  const required = ['TAILSCALE_API_KEY', 'TELEGRAM_BOT_TOKEN', 'DEFAULT_CHAT_ID']
+  const required = ['MCP_SECRET', 'TAILSCALE_API_KEY', 'GITHUB_TOKEN']
   const missing = required.filter(key => !process.env[key])
 
   if (missing.length > 0) {
@@ -55,7 +56,11 @@ async function main() {
 
   // Health check
   app.get('/health', (_req, res) => {
-    res.json({ status: 'ok', timestamp: new Date().toISOString() })
+    res.json({
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      dry_run: config.dry_run,
+    })
   })
 
   // MCP endpoint - a fresh transport is created per request (stateless / no sessions)
@@ -75,7 +80,11 @@ async function main() {
     console.log(`✅ MCP Server started on http://localhost:${port}`)
     console.log(`   POST http://localhost:${port}/mcp`)
     console.log(`   GET  http://localhost:${port}/health`)
-    console.log(`📋 Tools: ssh_exec, tailscale_status, upload_file, send_telegram`)
+    console.log(`📋 Tools: ssh_exec, tailscale_status, fetch_external, github_search, gist_kb, browser`)
+
+    if (config.dry_run) {
+      console.log(`⚠️  DRY RUN MODE - ssh_exec will not execute commands`)
+    }
   })
 
   // Graceful shutdown

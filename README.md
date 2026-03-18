@@ -2,7 +2,7 @@
 
 Reacher is a self-hosted MCP server that turns Claude into a personal infrastructure agent - with authenticated access to your machines, your APIs, and persistent memory across conversations.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Node.js](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org)
+[![v0.1.0](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://github.com/thezem/reacher/releases/tag/v0.1.0) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Node.js](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org)
 
 <table>
   <tr>
@@ -44,7 +44,7 @@ That's what `fetch_external` does. It injects your credentials automatically by 
 PROXY_ALLOWED_DOMAINS=api.github.com,api.linear.app,api.notion.com
 ```
 
-That's three integrations. *One tool.*
+That's three integrations. _One tool._
 
 ---
 
@@ -61,6 +61,19 @@ That's three integrations. *One tool.*
 
 ---
 
+## Safety
+
+Reacher gives Claude real access to your infrastructure - that's the point. These mechanisms let you define the boundaries:
+
+- **SSH command blocklist** - configure `ssh.blocked_commands` in `reacher.config.yaml` to block anything you never want executed
+- **Directory allowlist** - optional `ssh.allowed_dirs` to restrict SSH operations to specific paths
+- **Audit log** - every tool call is logged to `reacher-audit.log` with timestamp and result, sensitive keys stripped automatically
+- **Dry-run mode** - set `DRY_RUN=true` to have `ssh_exec` report what it would run without actually running it
+
+All of it is opt-in and configurable. You decide the risk tolerance.
+
+---
+
 ## Prerequisites
 
 - A [Tailscale](https://tailscale.com) account with your devices enrolled in a mesh network
@@ -72,31 +85,32 @@ That's three integrations. *One tool.*
 
 ## Setup
 
-Copy `.env.example` to `.env` and fill in your credentials, then choose your runtime:
+Copy `.env.example` to `.env` and `reacher.config.example.yaml` to `reacher.config.yaml`, fill in your credentials, then choose your runtime:
 
 **Docker (recommended)**
 
 ```bash
-git clone https://github.com/your-username/reacher.git
+git clone --branch v0.1.0 https://github.com/thezem/reacher.git
 cd reacher
+cp reacher.config.example.yaml reacher.config.yaml
 cp .env.example .env
-# edit .env with your keys
-docker build -t reacher .
-docker run -d -p 3000:3000 --env-file .env --restart unless-stopped --name reacher reacher
+# edit both files with your keys
+docker compose up -d
 ```
 
 **Bare Node**
 
 ```bash
-git clone https://github.com/your-username/reacher.git
+git clone --branch v0.1.0 https://github.com/thezem/reacher.git
 cd reacher
 npm install
+cp reacher.config.example.yaml reacher.config.yaml
 cp .env.example .env
-# edit .env with your keys
+# edit both files with your keys
 node index.js
 ```
 
-See [QUICKSTART.md](QUICKSTART.md) for full setup details including Tailscale SSH configuration.
+See [SKILL.md](SKILL.md) for a complete AI-agent-readable setup guide, or [QUICKSTART.md](QUICKSTART.md) for full manual setup details.
 
 ---
 
@@ -110,6 +124,29 @@ See [QUICKSTART.md](QUICKSTART.md) for full setup details including Tailscale SS
 Claude will now have access to all tools.
 
 **Tip:** Drop [AGENT.MD](AGENT.MD) into your Claude session at the start of a new conversation. Claude will discover your devices, probe SSH access, and save a device map to your gist so future sessions pick up where you left off. No manual setup needed.
+
+---
+
+## Configuration
+
+`reacher.config.yaml` handles the safety and behavior settings. Copy from the example and edit:
+
+```yaml
+ssh:
+  blocked_commands:
+    - 'rm -rf'
+    - 'shutdown'
+    - 'reboot'
+  allowed_dirs: [] # empty = no restriction
+
+audit:
+  enabled: true
+  log_path: './reacher-audit.log'
+
+dry_run: false
+```
+
+All settings can be overridden via environment variables - see `.env.example` for the full list.
 
 ---
 

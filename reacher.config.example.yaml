@@ -1,0 +1,53 @@
+# Reacher Configuration File
+# This file is optional. All settings can be overridden via environment variables.
+# Environment variables always take precedence over YAML config.
+#
+# To use this file:
+# 1. Copy to reacher.config.yaml in the project root
+# 2. Edit the values as needed
+# 3. Restart the server for changes to take effect
+
+# SSH Configuration
+ssh:
+  # List of commands to block from execution
+  # Supports substring matching (case-insensitive)
+  # Example: if "rm -rf" is blocked, any command containing "rm -rf" will be rejected
+  blocked_commands:
+    - "rm -rf"
+    - "dd"
+    - ":(){ :|:& };:" # fork bomb
+
+  # List of directories where SSH commands are allowed to operate
+  # If empty, all directories are allowed (no restriction)
+  # Uses prefix matching - a path is allowed if it starts with one of these directories
+  # Example: if allowed_dirs contains "/home/user", then "/home/user/file.txt" is allowed
+  allowed_dirs:
+    # - "/home/user"
+    # - "/tmp"
+    # - "/var/log"
+
+# Audit Configuration
+audit:
+  # Enable or disable audit logging
+  # When enabled, all tool calls are logged to audit.log_path
+  enabled: true
+
+  # Path to audit log file
+  # Supports relative and absolute paths
+  log_path: "./reacher-audit.log"
+
+# Dry-run Mode
+# When enabled, ssh_exec will not actually execute commands
+# Useful for testing and validation without side effects
+dry_run: false
+
+# ---
+# Environment Variable Overrides
+# ---
+# The following environment variables override the settings above:
+#
+# SSH_BLOCKED_COMMANDS     - comma-separated list (e.g., "rm -rf,dd,sudo")
+# SSH_ALLOWED_DIRS         - comma-separated list (e.g., "/home/user,/tmp")
+# AUDIT_ENABLED            - set to "false" to disable, anything else enables
+# AUDIT_LOG_PATH           - path to audit log file
+# DRY_RUN                  - set to "true" to enable, anything else disables

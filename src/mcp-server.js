@@ -28,44 +28,15 @@ export function createMCPServer(env) {
   })
 
   // -------------------------------------------------------------------------
-  // ssh_exec - no env vars needed
+  // Core tools — always available
   // -------------------------------------------------------------------------
-  server.tool(sshExec.name, sshExec.description, sshExec.schema, async args => {
-    const result = await sshExec.handler(args)
-    await auditLog(sshExec.name, args, result)
-    return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
-  })
 
-  // -------------------------------------------------------------------------
-  // tailscale_status - needs TAILSCALE_API_KEY
-  // -------------------------------------------------------------------------
-  server.tool(tailscaleStatus.name, tailscaleStatus.description, tailscaleStatus.schema, async args => {
-    const result = await tailscaleStatus.handler(args, env.TAILSCALE_API_KEY)
-    await auditLog(tailscaleStatus.name, args, result)
-    return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
-  })
-
-  // -------------------------------------------------------------------------
-  // fetch_external - needs PROXY_ALLOWED_DOMAINS + auth tokens
-  // -------------------------------------------------------------------------
   server.tool(fetchExternal.name, fetchExternal.description, fetchExternal.schema, async args => {
     const result = await fetchExternal.handler(args, env.PROXY_ALLOWED_DOMAINS, env)
     await auditLog(fetchExternal.name, args, result)
     return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
   })
 
-  // -------------------------------------------------------------------------
-  // gist_kb - needs GITHUB_TOKEN
-  // -------------------------------------------------------------------------
-  server.tool(gistKb.name, gistKb.description, gistKb.schema, async args => {
-    const result = await gistKb.handler(args, env)
-    await auditLog(gistKb.name, args, result)
-    return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
-  })
-
-  // -------------------------------------------------------------------------
-  // browser - uses BROWSER_CDP_HOST and BROWSER_CDP_PORT env vars
-  // -------------------------------------------------------------------------
   server.tool(browser.name, browser.description, browser.schema, async args => {
     const result = await browser.handler(args, env)
     await auditLog(browser.name, args, result)
@@ -73,13 +44,40 @@ export function createMCPServer(env) {
   })
 
   // -------------------------------------------------------------------------
-  // github_search - needs FETCH_EXTERNAL_TOKEN_MAP for token injection
+  // GitHub tools — require GITHUB_TOKEN
   // -------------------------------------------------------------------------
-  server.tool(githubSearch.name, githubSearch.description, githubSearch.schema, async args => {
-    const result = await githubSearch.handler(args, env.PROXY_ALLOWED_DOMAINS, env)
-    await auditLog(githubSearch.name, args, result)
-    return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
-  })
+
+  if (env.GITHUB_TOKEN) {
+    server.tool(gistKb.name, gistKb.description, gistKb.schema, async args => {
+      const result = await gistKb.handler(args, env)
+      await auditLog(gistKb.name, args, result)
+      return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
+    })
+
+    server.tool(githubSearch.name, githubSearch.description, githubSearch.schema, async args => {
+      const result = await githubSearch.handler(args, env.PROXY_ALLOWED_DOMAINS, env)
+      await auditLog(githubSearch.name, args, result)
+      return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
+    })
+  }
+
+  // -------------------------------------------------------------------------
+  // SSH / Tailscale tools — require TAILSCALE_API_KEY
+  // -------------------------------------------------------------------------
+
+  if (env.TAILSCALE_API_KEY) {
+    server.tool(sshExec.name, sshExec.description, sshExec.schema, async args => {
+      const result = await sshExec.handler(args)
+      await auditLog(sshExec.name, args, result)
+      return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
+    })
+
+    server.tool(tailscaleStatus.name, tailscaleStatus.description, tailscaleStatus.schema, async args => {
+      const result = await tailscaleStatus.handler(args, env.TAILSCALE_API_KEY)
+      await auditLog(tailscaleStatus.name, args, result)
+      return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
+    })
+  }
 
   return server
 }

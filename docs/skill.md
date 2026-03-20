@@ -25,7 +25,7 @@ Based on their answer:
 ## Step 2: Prerequisites check
 
 **Always required:**
-- Node.js 18+ — run `node --version` to check. Install from [nodejs.org](https://nodejs.org) if missing.
+- Node.js 22+ — run `node --version` to check. Install from [nodejs.org](https://nodejs.org) if missing.
 - A GitHub account — for `gist_kb` (knowledge base) and API calls to GitHub.
 
 **Only for SSH features:**

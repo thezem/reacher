@@ -17,7 +17,7 @@ The server runs as an Express.js HTTP service with token-based auth and communic
 ## Architecture
 
 ### Core Stack
-- **Runtime**: Node.js 18+ (uses ES modules, no CommonJS)
+- **Runtime**: Node.js 22+ (uses ES modules, no CommonJS)
 - **Framework**: Express.js for HTTP + @modelcontextprotocol/sdk for MCP
 - **Transport**: StreamableHTTPServerTransport (stateless - new transport per request)
 - **Config**: dotenv for environment variables

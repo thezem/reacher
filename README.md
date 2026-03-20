@@ -2,7 +2,7 @@
 
 Give Claude authenticated access to your APIs, a persistent knowledge base, a headless browser, and optionally your machines — on infrastructure you control.
 
-[![v0.1.2](https://img.shields.io/badge/version-0.1.2-blue.svg)](https://github.com/thezem/reacher/releases/tag/v0.1.2) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Node.js](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org)
+[![v0.1.2](https://img.shields.io/badge/version-0.1.2-blue.svg)](https://github.com/thezem/reacher/releases/tag/v0.1.2) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Node.js](https://img.shields.io/badge/node-%3E%3D22-brightgreen)](https://nodejs.org)
 
 <table>
   <tr>

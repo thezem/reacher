@@ -4,6 +4,8 @@ Give Claude authenticated access to your APIs, a persistent knowledge base, a he
 
 [![v0.1.2](https://img.shields.io/badge/version-0.1.2-blue.svg)](https://github.com/thezem/reacher/releases/tag/v0.1.2) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Node.js](https://img.shields.io/badge/node-%3E%3D22-brightgreen)](https://nodejs.org)
 
+<video src="https://i.ouim.me/i/3c3ea779.mp4" controls width="640" style="max-width:100%;border-radius:8px"></video>
+
 <table>
   <tr>
     <td colspan="2"><img src="/imgs/reacher.png" alt="Claude exploring code on a remote machine via Reacher SSH tool" width="640" /></td>

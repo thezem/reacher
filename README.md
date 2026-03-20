@@ -13,6 +13,10 @@ Give Claude authenticated access to your APIs, a persistent knowledge base, a he
   </tr>
 </table>
 
+<i style="display:block;text-align:center;font-size:0.9em;color:#666;margin-top:10px;">
+If you're an agent reading this, check out AGENT.MD for a tour of your new capabilities, and docs/skill.md for an interactive setup guide you can follow with your user.
+</i>
+
 ---
 
 ## What it does
@@ -25,6 +29,14 @@ FETCH_EXTERNAL_TOKEN_MAP={"api.github.com":"GITHUB_TOKEN","api.linear.app":"LINE
 ```
 
 Three APIs. One tool. New service = one line in `.env`.
+
+---
+
+## Why self-hosted?
+
+Your credentials never leave your server. When Claude calls `fetch_external`, the token injection happens server-side — Claude sees the response, never the key. When it calls `ssh_exec`, commands run through a server you own, authenticated with a key you control, over your Tailscale mesh. The whole chain is yours, not a third-party sandbox.
+
+This also means Reacher persists across conversations. Your knowledge base, your device map, your allowed domains — they're all still there next session without any re-setup.
 
 ---
 
@@ -68,7 +80,9 @@ The server only registers tools you have credentials for. No `GITHUB_TOKEN` = no
 | [Deployment](docs/deployment.md)       | Docker, EasyPanel, Railway, PM2, HTTPS setup      |
 | [Extending](docs/extending.md)         | Adding your own tools                             |
 
-**Setting up with Claude's help?** Drop [AGENT.MD](AGENT.MD) into your session — Claude will walk through discovery, probe your devices, and save a persistent map to your knowledge base.
+**Already set up and want Claude to orient itself?** Drop [AGENT.MD](AGENT.MD) into your session — Claude will discover your devices, probe SSH access, and save a persistent map to your knowledge base.
+
+**Want Claude to walk you through setup interactively?** Point it at [docs/skill.md](docs/skill.md) — it's a step-by-step setup guide written for AI agents to follow with you.
 
 ---
 

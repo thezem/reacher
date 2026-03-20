@@ -97,6 +97,7 @@ async function main() {
     if (process.env.GITHUB_TOKEN) activeTools.push('gist_kb', 'github_search')
     if (process.env.TAILSCALE_API_KEY) activeTools.push('ssh_exec', 'tailscale_status')
     console.log(`📋 Active tools: ${activeTools.join(', ')}`)
+    console.log(`ℹ️  browser requires: agent-browser (npm i -g agent-browser) + CDP browser on ws://${process.env.BROWSER_CDP_HOST || '127.0.0.1'}:${process.env.BROWSER_CDP_PORT || '9222'}`)
 
     if (config.dry_run) {
       console.log(`⚠️  DRY RUN MODE - ssh_exec will not execute commands`)

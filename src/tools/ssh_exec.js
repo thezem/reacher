@@ -33,8 +33,8 @@ export const schema = {
   user: z
     .string()
     .optional()
-    .default('hazem')
-    .describe('SSH user to connect as (default: hazem)'),
+    .default(process.env.SSH_DEFAULT_USER || 'root')
+    .describe('SSH user to connect as (defaults to SSH_DEFAULT_USER env var, or "root")'),
   shell: z
     .enum(['cmd', 'powershell'])
     .optional()

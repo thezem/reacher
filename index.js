@@ -16,7 +16,8 @@ import { config } from './src/lib/config.js'
 // ---------------------------------------------------------------------------
 
 function validateEnv() {
-  const required = ['MCP_SECRET', 'TAILSCALE_API_KEY', 'GITHUB_TOKEN']
+  // Only MCP_SECRET is strictly required — everything else gates individual tools
+  const required = ['MCP_SECRET']
   const missing = required.filter(key => !process.env[key])
 
   if (missing.length > 0) {
@@ -24,6 +25,17 @@ function validateEnv() {
     missing.forEach(key => console.error(`   - ${key}`))
     console.error('\nPlease set them in .env or as environment variables')
     process.exit(1)
+  }
+
+  // Inform which feature sets are active
+  if (!process.env.GITHUB_TOKEN) {
+    console.warn('⚠️  GITHUB_TOKEN not set — gist_kb and github_search will be unavailable')
+  }
+  if (!process.env.TAILSCALE_API_KEY) {
+    console.warn('⚠️  TAILSCALE_API_KEY not set — ssh_exec and tailscale_status will be unavailable')
+  }
+  if (!process.env.PROXY_ALLOWED_DOMAINS) {
+    console.warn('⚠️  PROXY_ALLOWED_DOMAINS not set — fetch_external will block all requests')
   }
 }
 
@@ -80,7 +92,11 @@ async function main() {
     console.log(`✅ MCP Server started on http://localhost:${port}`)
     console.log(`   POST http://localhost:${port}/mcp`)
     console.log(`   GET  http://localhost:${port}/health`)
-    console.log(`📋 Tools: ssh_exec, tailscale_status, fetch_external, github_search, gist_kb, browser`)
+
+    const activeTools = ['fetch_external', 'browser']
+    if (process.env.GITHUB_TOKEN) activeTools.push('gist_kb', 'github_search')
+    if (process.env.TAILSCALE_API_KEY) activeTools.push('ssh_exec', 'tailscale_status')
+    console.log(`📋 Active tools: ${activeTools.join(', ')}`)
 
     if (config.dry_run) {
       console.log(`⚠️  DRY RUN MODE - ssh_exec will not execute commands`)

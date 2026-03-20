@@ -1,6 +1,6 @@
 # Reacher
 
-A self-hosted MCP server that gives Claude authenticated, persistent access to your machines, your APIs, and a private knowledge base — running on infrastructure you control.
+A self-hosted MCP server that gives Claude authenticated access to your APIs, a persistent knowledge base, your machines, and a headless browser — on infrastructure you control.
 
 [![v0.1.1](https://img.shields.io/badge/version-0.1.1-blue.svg)](https://github.com/thezem/reacher/releases/tag/v0.1.1) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Node.js](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org)
 
@@ -15,90 +15,154 @@ A self-hosted MCP server that gives Claude authenticated, persistent access to y
 
 ---
 
-## Why Reacher exists
+## Pick your path
 
-Most MCP connectors give you a dedicated tool per action: `github_list_prs`, `linear_create_issue`, `notion_search`. Every new service means a new connector to install and manage.
+You don't need a VPS. You don't need Tailscale. Start with whatever matches where you are right now.
 
-Reacher takes a different approach. One tool — `fetch_external` — proxies any HTTP request to any domain on your allowlist, and injects the right auth token automatically. Claude already knows REST APIs. It doesn't need a `github_list_prs` tool; it just needs a way to call `api.github.com` with your token, without you pasting credentials into every prompt.
+| What I want | What I need | Time |
+|---|---|---|
+| Claude can call my APIs + remember things across conversations | Node.js + GitHub token | ~5 min |
+| + control a headless browser | Above + a running browser | ~10 min |
+| + SSH into my servers and machines | Above + Tailscale + SSH key | ~30 min |
 
-Adding GitHub, Linear, and Notion support looks like this:
+Every feature is opt-in. The server starts with whatever credentials you provide and activates only the tools those credentials unlock.
+
+---
+
+## The core idea
+
+Most MCP connectors give you one tool per API action. `github_list_prs`. `linear_create_issue`. A new connector to install every time you want to talk to a new service.
+
+Reacher's `fetch_external` tool takes a different approach: it proxies any HTTP request to any domain on your allowlist and injects the right auth token automatically. Claude already knows how REST APIs work — it doesn't need a bespoke `github_list_prs` tool. It just needs a way to call `api.github.com` with your token, without you pasting credentials into every prompt.
+
+Adding three APIs looks like this:
 
 ```
 PROXY_ALLOWED_DOMAINS=api.github.com,api.linear.app,api.notion.com
 FETCH_EXTERNAL_TOKEN_MAP={"api.github.com":"GITHUB_TOKEN","api.linear.app":"LINEAR_TOKEN"}
 ```
 
-Three APIs. One tool. New credentials added in `.env`, not in a connector marketplace.
-
-The SSH side works the same way. `ssh_exec` reaches any device on your Tailscale mesh by hostname — no manual key management per host. The SSH key lives once on the server, and every device in your mesh is reachable from there.
+That's it. New service = one line in `.env`. No new connector. No new tool.
 
 ---
 
 ## Tools
 
-| Tool | What it does |
-| --- | --- |
-| `ssh_exec` | Run shell commands on any Tailscale device via SSH. Supports Linux (`cmd`) and Windows (`powershell`). 30s timeout, 10 MB output cap. |
-| `tailscale_status` | List all devices with online/offline status, IPs, and OS. Useful for discovering hostnames before SSHing. |
-| `fetch_external` | Proxy HTTP requests to allowlisted domains with automatic auth header injection per domain. |
-| `github_search` | Search GitHub pull requests and commits by author and date range. |
-| `gist_kb` | Private knowledge base backed by GitHub Gists. All entries are namespaced under the `cc--` filename prefix. Supports list, get, create, update, delete. |
-| `browser` | Control a headless browser via CDP using the `agent-browser` CLI. Scrape, fill forms, take snapshots. |
-
----
-
-## Prerequisites
-
-- A [Tailscale](https://tailscale.com) account with your devices enrolled
-- Node.js 18+ or Docker
-- A VPS or always-on machine with a public HTTPS URL (required for Claude.ai to connect)
-- A Tailscale API key (needs "Devices (read)" scope)
-- A GitHub personal access token (needs `gist` read+write scope, plus any scopes for APIs you want to proxy)
-- An SSH keypair — the private key must be at `/root/.ssh/reacher-key` in the container (or wherever the server runs)
+| Tool | Needs | What it does |
+|---|---|---|
+| `fetch_external` | `PROXY_ALLOWED_DOMAINS` | Proxy HTTP requests to allowlisted domains with auto auth injection |
+| `browser` | A CDP browser running | Control a headless browser — scrape, click, fill forms, snapshot |
+| `gist_kb` | `GITHUB_TOKEN` | Persistent private knowledge base backed by GitHub Gists |
+| `github_search` | `GITHUB_TOKEN` | Search PRs and commits by author and date range |
+| `ssh_exec` | `TAILSCALE_API_KEY` + SSH key | Run shell commands on any machine in your Tailscale mesh |
+| `tailscale_status` | `TAILSCALE_API_KEY` | List all your devices with online/offline status and IPs |
 
 ---
 
 ## Setup
 
-Copy `.env.example` to `.env` and `reacher.config.example.yaml` to `reacher.config.yaml`, fill in your values, then pick a runtime:
+### Path 1 — Run locally with Claude Code (fastest, zero infrastructure)
 
-**Docker (recommended)**
-
-```bash
-git clone --branch v0.1.1 https://github.com/thezem/reacher.git
-cd reacher
-cp reacher.config.example.yaml reacher.config.yaml
-cp .env.example .env
-# edit both files with your keys
-docker compose up -d
-```
-
-> **SSH key:** Mount your SSH private key into the container at `/root/.ssh/reacher-key`. The server sets `chmod 600` on it at startup. The corresponding public key must be authorized on your target machines.
-
-**Bare Node**
+Claude Code supports local MCP servers. No public URL, no VPS, no HTTPS required.
 
 ```bash
-git clone --branch v0.1.1 https://github.com/thezem/reacher.git
+git clone https://github.com/thezem/reacher.git
 cd reacher
 npm install
-cp reacher.config.example.yaml reacher.config.yaml
 cp .env.example .env
-# edit both files with your keys
+```
+
+Edit `.env` — at minimum:
+
+```env
+MCP_SECRET=any-random-string
+GITHUB_TOKEN=your_github_token
+PROXY_ALLOWED_DOMAINS=api.github.com
+FETCH_EXTERNAL_TOKEN_MAP={"api.github.com":"GITHUB_TOKEN"}
+```
+
+Start the server:
+
+```bash
 node index.js
 ```
 
-See [SKILL.md](SKILL.md) for a complete AI-agent-readable setup guide, or [QUICKSTART.md](QUICKSTART.md) for full manual details.
+Add it to Claude Code by editing your MCP config (usually `~/.claude/mcp.json` or via `/mcp` in Claude Code):
+
+```json
+{
+  "mcpServers": {
+    "reacher": {
+      "type": "http",
+      "url": "http://localhost:3000/mcp?token=your-mcp-secret"
+    }
+  }
+}
+```
+
+You now have API proxying and a persistent knowledge base. No cloud required.
 
 ---
 
-## Connecting to Claude.ai
+### Path 2 — Local machine + Cloudflare Tunnel (for Claude.ai, still no VPS)
+
+Claude.ai needs a public HTTPS URL. Cloudflare Tunnel gives you one for free, with no account required, no port forwarding, no domain.
+
+```bash
+# Start Reacher
+node index.js
+
+# In a second terminal — gives you a public HTTPS URL instantly
+npx cloudflared tunnel --url http://localhost:3000
+```
+
+Cloudflare prints something like `https://random-words.trycloudflare.com`. Paste that into Claude.ai:
 
 1. Go to **Claude.ai** → **Settings** → **Integrations**
-2. Click **Add custom connector**
-3. Enter your server URL: `https://yourdomain.com/mcp?token=YOUR_MCP_SECRET`
-4. Authenticate
+2. **Add custom connector**
+3. URL: `https://random-words.trycloudflare.com/mcp?token=your-mcp-secret`
 
-Claude will now have access to all tools.
+> **Note:** The Cloudflare Tunnel URL changes every time you restart `cloudflared`. For a stable URL, use a free Cloudflare account with a named tunnel, or move to Path 3.
+
+---
+
+### Path 3 — VPS with SSH access (full setup)
+
+This path adds `ssh_exec` and `tailscale_status` — the ability to run commands on any machine in your Tailscale mesh.
+
+**Additional prerequisites:**
+- A [Tailscale](https://tailscale.com) account with your devices enrolled
+- A VPS or always-on machine reachable from Claude.ai over HTTPS
+- An SSH keypair — the private key must be placed at `/root/.ssh/reacher-key` on the server
+
+**Docker (recommended for VPS)**
+
+```bash
+git clone --branch v0.1.1 https://github.com/thezem/reacher.git
+cd reacher
+cp reacher.config.example.yaml reacher.config.yaml
+cp .env.example .env
+# add TAILSCALE_API_KEY and SSH_DEFAULT_USER to .env
+docker compose up -d
+```
+
+Mount your SSH private key into the container:
+
+```yaml
+# docker-compose.yml — add to the volumes section
+volumes:
+  - ~/.ssh/your-private-key:/root/.ssh/reacher-key:ro
+```
+
+The server sets `chmod 600` on it at startup. The matching public key must be in `~/.ssh/authorized_keys` on your target machines.
+
+**Expose over HTTPS**
+
+The server needs a public HTTPS URL. Options:
+- **Caddy** (simplest): `mcp.yourdomain.com { reverse_proxy localhost:3000 }`
+- **EasyPanel** — connect your GitHub repo, it handles builds and HTTPS
+- **Railway / Render** — standard Node.js deploy, set env vars, done
+- **PM2** — `pm2 start index.js --name reacher && pm2 save`
 
 **Tip:** Drop [AGENT.MD](AGENT.MD) into a new Claude session. Claude will discover your devices, probe SSH access, and save a device map to your Gist KB so future sessions start with context already loaded.
 
@@ -106,7 +170,7 @@ Claude will now have access to all tools.
 
 ## Configuration
 
-`reacher.config.yaml` controls safety and behavior. Copy from the example:
+`reacher.config.yaml` handles safety settings. Copy from the example and edit:
 
 ```yaml
 ssh:
@@ -114,7 +178,7 @@ ssh:
     - 'rm -rf /'
     - 'shutdown'
     - 'reboot'
-  allowed_dirs: []  # empty = no restriction; paths use prefix matching
+  allowed_dirs: []  # empty = no restriction; uses prefix matching
 
 audit:
   enabled: true
@@ -129,32 +193,54 @@ All settings can be overridden by environment variables — see `.env.example` f
 
 ## Environment variables
 
-| Variable | Required | Description |
-| --- | --- | --- |
-| `MCP_SECRET` | Yes | Shared secret passed as `?token=` in the URL. Generate with `openssl rand -hex 32`. |
-| `TAILSCALE_API_KEY` | Yes | API key for querying your Tailscale network. Needs "Devices (read)" scope. |
-| `GITHUB_TOKEN` | Yes | Personal access token for GitHub API and Gist KB. Needs `gist` scope. |
-| `PROXY_ALLOWED_DOMAINS` | Yes | Comma-separated domains `fetch_external` can call (e.g. `api.github.com,api.linear.app`). |
-| `FETCH_EXTERNAL_TOKEN_MAP` | No | JSON map of domain → env var name for auth injection (e.g. `{"api.github.com":"GITHUB_TOKEN"}`). |
-| `SSH_DEFAULT_USER` | No | Default SSH user for `ssh_exec` when not specified per-call. Defaults to `root`. |
-| `PORT` | No | HTTP port. Defaults to `3000`. |
-| `BROWSER_CDP_HOST` | No | CDP browser host. Defaults to `127.0.0.1`. |
-| `BROWSER_CDP_PORT` | No | CDP browser port. Defaults to `9222`. |
-| `DRY_RUN` | No | Set `true` to have `ssh_exec` report what it would run without running it. |
-| `AUDIT_ENABLED` | No | Enable audit logging. Defaults to `true`. |
-| `AUDIT_LOG_PATH` | No | Path to the audit log file. Defaults to `./reacher-audit.log`. |
+**Always:**
+
+| Variable | Description |
+|---|---|
+| `MCP_SECRET` | Shared secret passed as `?token=` in the URL. Generate with `openssl rand -hex 32`. |
+
+**For API tools:**
+
+| Variable | Description |
+|---|---|
+| `PROXY_ALLOWED_DOMAINS` | Comma-separated domains `fetch_external` can call (e.g. `api.github.com,api.linear.app`). |
+| `FETCH_EXTERNAL_TOKEN_MAP` | JSON map of domain → env var name for auth injection (e.g. `{"api.github.com":"GITHUB_TOKEN"}`). |
+
+**For GitHub tools (`gist_kb`, `github_search`):**
+
+| Variable | Description |
+|---|---|
+| `GITHUB_TOKEN` | Personal access token. Needs `gist` scope for `gist_kb`; add `repo` scope for private repo search. |
+
+**For SSH tools (`ssh_exec`, `tailscale_status`):**
+
+| Variable | Description |
+|---|---|
+| `TAILSCALE_API_KEY` | API key for your Tailscale network. Needs "Devices (read)" scope. |
+| `SSH_DEFAULT_USER` | Default SSH user for `ssh_exec`. Defaults to `root`. |
+
+**Optional:**
+
+| Variable | Description |
+|---|---|
+| `PORT` | HTTP port. Defaults to `3000`. |
+| `BROWSER_CDP_HOST` | CDP browser host. Defaults to `127.0.0.1`. |
+| `BROWSER_CDP_PORT` | CDP browser port. Defaults to `9222`. |
+| `DRY_RUN` | Set `true` to have `ssh_exec` log what it would run without executing. |
+| `AUDIT_ENABLED` | Enable audit logging. Defaults to `true`. |
+| `AUDIT_LOG_PATH` | Path to the audit log. Defaults to `./reacher-audit.log`. |
 
 ---
 
 ## Safety
 
-Reacher gives Claude real access to your infrastructure. These mechanisms let you define the limits:
+Reacher gives Claude real access to your infrastructure. These mechanisms define the limits:
 
 - **SSH command blocklist** — `ssh.blocked_commands` in config; substring-matched, case-insensitive
 - **Directory allowlist** — `ssh.allowed_dirs` restricts SSH operations to specific path prefixes
-- **Audit log** — every tool call logged with timestamp, tool name, and result; sensitive values stripped automatically
-- **Dry-run mode** — `DRY_RUN=true` makes `ssh_exec` describe what it would do without executing it
 - **Domain allowlist** — `fetch_external` hard-blocks any domain not in `PROXY_ALLOWED_DOMAINS`
+- **Audit log** — every tool call logged with timestamp, tool name, and result; sensitive values stripped automatically
+- **Dry-run mode** — `DRY_RUN=true` makes `ssh_exec` describe what it would do without running it
 
 ---
 
@@ -163,20 +249,9 @@ Reacher gives Claude real access to your infrastructure. These mechanisms let yo
 Each tool is a self-contained file in `src/tools/`. To add one:
 
 1. Create `src/tools/my_tool.js` — export `name`, `description`, `schema` (Zod shape), and `handler`
-2. Import and register it in `src/mcp-server.js` with `server.tool(...)`
+2. Import and register it in `src/mcp-server.js` following the same pattern
 
 Any existing tool file is a working reference.
-
----
-
-## Deployment
-
-- **Docker on any VPS** — `docker compose up -d`, set `--restart unless-stopped`
-- **EasyPanel** — connect your GitHub repo, set env vars in the dashboard
-- **Railway / Render** — standard Node.js service, deploy from GitHub
-- **PM2 on a bare VPS** — `pm2 start index.js --name reacher && pm2 save`
-
-The server needs a public HTTPS URL for Claude.ai to reach it. A reverse proxy (Caddy, Nginx, Traefik) in front handles TLS on most VPS setups.
 
 ---
 

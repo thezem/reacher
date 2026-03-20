@@ -6,7 +6,7 @@ This file helps Claude understand how to use Reacher's tools effectively. Paste 
 
 ## What is Reacher?
 
-Reacher is a self-hosted MCP server connected to this Claude session. It gives Claude five capabilities: running shell commands on remote machines, discovering your Tailscale network, proxying authenticated API calls, searching GitHub, and maintaining a persistent knowledge base via GitHub Gists.
+Reacher is a self-hosted MCP server connected to this Claude session. It gives Claude up to six capabilities depending on which credentials are configured: running shell commands on remote machines, discovering your Tailscale network, proxying authenticated API calls, searching GitHub, maintaining a persistent knowledge base via GitHub Gists, and controlling a headless browser.
 
 ---
 
@@ -97,7 +97,7 @@ Proxies an HTTP request through the Reacher server, with automatic token injecti
 
 **How token injection works:** The server has a `TOKEN_INJECTION_MAP` that maps domains to environment variable names. For example, `api.github.com` maps to `GITHUB_TOKEN` - so any call to the GitHub API automatically gets `Authorization: Bearer <token>` injected server-side. The user never has to paste tokens into the chat.
 
-To add a new domain, the user adds it to `PROXY_ALLOWED_DOMAINS` in their `.env` and optionally adds a token mapping in `src/tools/fetch_external.js`.
+To add a new domain, the user adds it to `PROXY_ALLOWED_DOMAINS` in their `.env` and adds a token mapping in `FETCH_EXTERNAL_TOKEN_MAP` (e.g. `{"api.github.com":"GITHUB_TOKEN","api.linear.app":"LINEAR_TOKEN"}`), then restarts the server.
 
 **What Claude can do with this:** Claude already knows the REST API structure for most major services (GitHub, Linear, Notion, Jira, etc.). If the domain is allowed and the token is configured, just call the API directly - no need to ask the user for endpoint documentation.
 
@@ -168,7 +168,7 @@ Searches GitHub for pull requests or commits by author and date range. Returns c
 
 Reads and writes a private knowledge base backed by GitHub Gists. This is how context persists across conversations.
 
-**Actions:** `read`, `write`, `list`, `delete`
+**Actions:** `list`, `get`, `create`, `update`, `delete`
 
 **Recommended conventions:**
 

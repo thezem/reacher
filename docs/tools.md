@@ -4,7 +4,7 @@
 
 ## `fetch_external`
 
-Proxy an HTTP request to an allowlisted domain. Auth tokens are injected automatically server-side — Claude never sees your credentials.
+Proxy an HTTP request to an allowlisted domain. Auth tokens are injected automatically server-side — Claude never sees your credentials. JSON responses can optionally be transformed to extract specific fields and converted to YAML or JSON format.
 
 **Requires:** `PROXY_ALLOWED_DOMAINS` (and optionally `FETCH_EXTERNAL_TOKEN_MAP` for auth injection)
 
@@ -16,6 +16,8 @@ Proxy an HTTP request to an allowlisted domain. Auth tokens are injected automat
 | `method` | string | HTTP method: `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `HEAD`, `OPTIONS`. Defaults to `GET`. |
 | `body` | object | Request body for `POST`/`PUT`/`PATCH` requests |
 | `headers` | object | Additional headers to include |
+| `pick` | array | Optional array of field paths to extract from JSON response. Supports dot-notation for nested objects (`user.login`), deep nesting (`data.user.profile.name`), and array notation (`labels[].name`). Only applies to JSON responses. |
+| `format` | string | Response format after transformation: `yaml` (default, converts JSON to YAML) or `json` (returns as object). Only applies to JSON responses. |
 
 **How token injection works:**
 
@@ -25,12 +27,51 @@ Proxy an HTTP request to an allowlisted domain. Auth tokens are injected automat
 FETCH_EXTERNAL_TOKEN_MAP={"api.github.com":"GITHUB_TOKEN","api.linear.app":"LINEAR_TOKEN"}
 ```
 
-**Example — list open PRs on GitHub:**
+**Response transformation with `pick` and `format`:**
+
+When `pick` is provided, only the specified fields are extracted from the JSON response. This is useful for large API responses when you only need specific data:
+
+- **Dot notation:** `"user.login"` extracts the `login` field from a nested `user` object
+- **Deep nesting:** `"data.user.profile.email"` works across any nesting level
+- **Array notation:** `"labels[].name"` extracts the `name` field from each object in the `labels` array
+- **Nested arrays:** `"commits[].author.name"` extracts nested fields from array elements
+
+The `format` parameter controls output format:
+- **`yaml` (default):** Converted to YAML format, ideal for reading large responses in chat
+- **`json`:** Returned as JavaScript object, useful for further processing
+
+Both parameters only apply to JSON responses (`Content-Type: application/json`). Text responses (HTML, plain text) pass through unchanged.
+
+**Examples:**
 
 ```
-url: "https://api.github.com/repos/owner/repo/pulls?state=open"
+# Get all PRs with full details (YAML format by default)
+url: "https://api.github.com/repos/owner/repo/pulls"
 method: GET
-# GITHUB_TOKEN is injected automatically
+
+# Get only PR numbers and titles as YAML
+url: "https://api.github.com/repos/owner/repo/pulls"
+method: GET
+pick: ["number", "title"]
+format: yaml
+
+# Extract specific fields from contributors list
+url: "https://api.github.com/repos/owner/repo/contributors"
+method: GET
+pick: ["login", "contributions"]
+format: yaml
+
+# Extract nested fields and array fields, keep as JSON for processing
+url: "https://api.github.com/repos/owner/repo/issues"
+method: GET
+pick: ["number", "title", "user.login", "labels[].name"]
+format: json
+
+# Extract from a top-level array of objects
+url: "https://api.github.com/repos/owner/repo/commits"
+method: GET
+pick: ["sha", "message", "author.name"]
+format: yaml
 ```
 
 **If a domain is blocked:** the tool returns `{ success: false, error: "Domain not allowed" }`. Add the domain to `PROXY_ALLOWED_DOMAINS` in `.env` and restart the server.

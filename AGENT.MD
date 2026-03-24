@@ -86,7 +86,7 @@ Lists all devices in the user's Tailscale network with their hostname, IP, OS, a
 
 ### `fetch_external`
 
-Proxies an HTTP request through the Reacher server, with automatic token injection for configured domains.
+Proxies an HTTP request through the Reacher server, with automatic token injection for configured domains. Responses can be transformed to extract specific fields and converted to YAML or kept as JSON.
 
 **Parameters:**
 
@@ -94,19 +94,54 @@ Proxies an HTTP request through the Reacher server, with automatic token injecti
 - `method` - GET, POST, PUT, PATCH, DELETE (default: GET)
 - `body` - JSON body for POST/PATCH/PUT
 - `headers` - additional headers to send
+- `pick` - optional array of field paths to extract from JSON responses (dot-notation for nested fields, `field[]` notation for array elements)
+- `format` - response format: `yaml` (default, converts JSON to YAML) or `json` (returns as object)
 
 **How token injection works:** The server has a `TOKEN_INJECTION_MAP` that maps domains to environment variable names. For example, `api.github.com` maps to `GITHUB_TOKEN` - so any call to the GitHub API automatically gets `Authorization: Bearer <token>` injected server-side. The user never has to paste tokens into the chat.
 
 To add a new domain, the user adds it to `PROXY_ALLOWED_DOMAINS` in their `.env` and adds a token mapping in `FETCH_EXTERNAL_TOKEN_MAP` (e.g. `{"api.github.com":"GITHUB_TOKEN","api.linear.app":"LINEAR_TOKEN"}`), then restarts the server.
 
+**Response transformation with pick and format:**
+
+The `pick` parameter extracts specific fields from JSON responses. This is useful when APIs return large responses but you only need a few fields:
+
+- Dot notation: `"user.login"` extracts the `login` field from a nested `user` object
+- Deep nesting: `"data.user.profile.email"` works across any depth
+- Array notation: `"labels[].name"` extracts the `name` field from each element in the `labels` array
+- Multiple arrays: `"commits[].author.name"` extracts nested fields from array elements
+
+The `format` parameter controls output format:
+- `yaml` (default) - converts picked/full JSON to YAML, great for reading large responses in chat
+- `json` - returns as object (original behavior)
+
+Format only applies to JSON responses; text responses (HTML, plain text) pass through unchanged.
+
 **What Claude can do with this:** Claude already knows the REST API structure for most major services (GitHub, Linear, Notion, Jira, etc.). If the domain is allowed and the token is configured, just call the API directly - no need to ask the user for endpoint documentation.
 
-**Example - GitHub:**
+**Examples:**
 
 ```
+# Get full PR list as YAML (default)
 url: "https://api.github.com/repos/owner/repo/pulls?state=open"
 method: GET
-# Token is injected automatically if GITHUB_TOKEN is set in .env
+
+# Get only PR numbers and titles
+url: "https://api.github.com/repos/owner/repo/pulls?state=open"
+method: GET
+pick: ["number", "title"]
+format: yaml
+
+# Get contributor names from a large API response
+url: "https://api.github.com/repos/owner/repo/contributors"
+method: GET
+pick: ["login", "contributions"]
+format: yaml
+
+# Extract labels from issues and keep as JSON for further processing
+url: "https://api.github.com/repos/owner/repo/issues"
+method: GET
+pick: ["number", "title", "labels[].name"]
+format: json
 ```
 
 **If a domain is blocked:** the tool returns `{ success: false, error: "Domain not allowed" }`. Tell the user to add the domain to `PROXY_ALLOWED_DOMAINS` in their `.env` and restart the server.

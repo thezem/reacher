@@ -10,7 +10,7 @@ export const name = 'tailscale_status';
 
 export const description =
   'Get all devices in your Tailscale network with their online/offline status, ' +
-  'IP addresses, OS, and last-seen time.';
+  'IP addresses, OS, and last-seen time. Note: the Tailscale API sometimes returns devices as offline.';
 
 // No parameters needed — it just fetches your whole tailnet
 export const schema = {};

@@ -1,6 +1,6 @@
 {
   "name": "reacher",
-  "version": "0.1.0",
+  "version": "0.2.1",
   "type": "module",
   "description": "Self-hosted MCP server for SSH, API proxying, browser automation, and persistent AI memory",
   "main": "index.js",
